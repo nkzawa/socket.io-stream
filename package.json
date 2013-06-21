@@ -6,6 +6,10 @@
   "keywords": [
     "stream", "socket.io", "binary", "file", "upload"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nkzawa/socket.io-stream.git"
+  },
   "scripts": {
     "test": "node_modules/.bin/mocha --reporter dot"
   },
