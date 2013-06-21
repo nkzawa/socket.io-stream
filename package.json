@@ -1,0 +1,24 @@
+{
+  "name": "socket.io-stream",
+  "version": "0.1.0",
+  "description": "stream for socket.io",
+  "author": "Naoyuki Kanezawa <naoyuki.kanezawa@gmail.com>",
+  "keywords": [
+    "stream", "socket.io", "binary", "file", "upload"
+  ],
+  "scripts": {
+    "test": "node_modules/.bin/mocha --reporter dot"
+  },
+  "dependencies": {
+    "readable-stream": "1.0.2",
+    "debug": "*"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "chai": "*",
+    "async": "*",
+    "checksum": "*",
+    "socket.io": "0.9.16",
+    "socket.io-client": "0.9.16"
+  }
+}
