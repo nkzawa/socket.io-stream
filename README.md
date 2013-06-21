@@ -2,6 +2,9 @@
 
 Bidirectional binary data transfer with Stream 2 API through [Socket.IO](https://github.com/LearnBoost/socket.io).
 
+## Installation
+    $ npm install socket.io-stream
+
 ## Usage
 Server:
 ```js
