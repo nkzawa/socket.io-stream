@@ -39,7 +39,7 @@ describe('socket.io-stream', function() {
   describe('lookup', function() {
     it('should always return a same instance for a socket', function() {
       var socket = client(null, {'auto connect': false});
-      expect(ss(socket)).to.eql(ss(socket));
+      expect(ss(socket)).to.equal(ss(socket));
     });
   });
 
@@ -121,6 +121,16 @@ describe('socket.io-stream', function() {
         expect(err.message).to.eql('error on read-stream');
         done()
       });
+    });
+
+    it('should throw an error when resending streams', function() {
+      var socket = ss(client(null, {'auto connect': false}))
+        , stream = ss.createStream();
+
+      socket.emit('foo', stream);
+      expect(function() {
+        socket.emit('bar', stream);
+      }).to.throw(Error);;
     });
   });
 
