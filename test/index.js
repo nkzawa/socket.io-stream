@@ -48,8 +48,8 @@ describe('socket.io-stream', function() {
       , _filename = filename + '.tmp';
 
     it('should be able to pipe a file to the server', function(done) {
-      this.io.sockets.on('connection', function(socket) {
-        ss(socket).on('foo', function(stream, data, callback) {
+      this.io.of('/foo').on('connection', function(socket) {
+        ss(socket).on('file', function(stream, data, callback) {
           expect(data.name).to.eql(filename);
 
           var dst = fs.createWriteStream(_filename);
@@ -60,7 +60,7 @@ describe('socket.io-stream', function() {
       });
 
       var stream = ss.createStream();
-      ss(client()).emit('foo', stream, {name: filename}, function() {
+      ss(client('/foo')).emit('file', stream, {name: filename}, function() {
         async.map([filename, _filename], checksum.file, function(err, sums) {
           // check if two files are equal.
           expect(sums[0]).to.eql(sums[1]);
@@ -71,9 +71,9 @@ describe('socket.io-stream', function() {
     });
 
     it('should be able to pipe a file to the client', function(done) {
-      this.io.sockets.on('connection', function(socket) {
+      this.io.of('/foo').on('connection', function(socket) {
         var stream = ss.createStream();
-        ss(socket).emit('foo', stream, {name: filename}, function(unused) {
+        ss(socket).emit('file', stream, {name: filename}, function(unused) {
           async.map([filename, _filename], checksum.file, function(err, sums) {
             expect(sums[0]).to.eql(sums[1]);
             done();
@@ -82,7 +82,7 @@ describe('socket.io-stream', function() {
         fs.createReadStream(filename).pipe(stream);
       });
 
-      ss(client()).on('foo', function(stream, data, callback) {
+      ss(client('/foo')).on('file', function(stream, data, callback) {
         expect(data.name).to.eql(filename);
 
         var dst = fs.createWriteStream(_filename);
