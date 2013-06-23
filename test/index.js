@@ -53,7 +53,8 @@ describe('socket.io-stream', function() {
           expect(data.name).to.eql(filename);
 
           var dst = fs.createWriteStream(_filename);
-          dst.on('finish', callback);
+          // use 'close' since 'finish' is not supported on the old Stream.
+          dst.on('close', callback);
           stream.pipe(dst);
         });
       });
@@ -82,11 +83,10 @@ describe('socket.io-stream', function() {
       });
 
       ss(client()).on('foo', function(stream, data, callback) {
-        console.log(arguments);
         expect(data.name).to.eql(filename);
 
         var dst = fs.createWriteStream(_filename);
-        dst.on('finish', callback);
+        dst.on('close', callback);
         stream.pipe(dst);
       });
     });
