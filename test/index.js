@@ -9,10 +9,16 @@ var fs = require('fs')
   , port = 8888;
 
 
-function client(path) {
+function client(path, options) {
   path = path || '';
-  return _client.connect('http://localhost:' + port + path,
-      {'force new connection': true});
+  options = options || {};
+
+  var _options = {'force new connection': true};
+  for (var key in options) {
+    _options[key] = options[key];
+  }
+
+  return _client.connect('http://localhost:' + port + path, _options);
 }
 
 describe('socket.io-stream', function() {
@@ -30,7 +36,14 @@ describe('socket.io-stream', function() {
     this.io.server.close(done);
   });
 
-  describe('stream', function() {
+  describe('lookup', function() {
+    it('should always return a same instance for a socket', function() {
+      var socket = client(null, {'auto connect': false});
+      expect(ss(socket)).to.eql(ss(socket));
+    });
+  });
+
+  describe('streaming', function() {
     var filename = path.join(__dirname, 'resources/frog.jpg')
       , _filename = filename + '.tmp';
 
@@ -79,7 +92,7 @@ describe('socket.io-stream', function() {
     });
   });
 
-  describe('error', function() {
+  describe('errors', function() {
     it('should send errors to write-stream', function(done) {
       this.io.sockets.on('connection', function(socket) {
         ss(socket).on('foo', function(stream) {
@@ -113,11 +126,8 @@ describe('socket.io-stream', function() {
 
   describe('clean up', function() {
     it('should clean up write-streams on finish and error', function() {
-      var socket = ss(client())
+      var socket = ss(client(null, {'auto connect': false}))
         , stream = ss.createStream();
-
-      // suppress connection error.
-      socket.on('error', function() {});
 
       function writeStreams() {
         return Object.keys(socket.writeStreams);
@@ -136,11 +146,8 @@ describe('socket.io-stream', function() {
     });
 
     it('should clean up read-streams on end and error', function() {
-      var socket = ss(client())
+      var socket = ss(client(null, {'auto connect': false}))
         , stream = ss.createStream();
-
-      // suppress connection errors.
-      socket.on('error', function() {});
 
       function readStreams() {
         return Object.keys(socket.readStreams);
