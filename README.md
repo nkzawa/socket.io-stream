@@ -8,7 +8,7 @@ Bidirectional binary data transfer with Stream 2 API through [Socket.IO](https:/
     $ npm install socket.io-stream
 
 ## Usage
-To receive streams, you just wrap `socket` with `socket.io-stream`, then listen any events.
+To receive streams, you just wrap `socket` with `socket.io-stream`, then listen any events as usual.
 
 Server:
 ```js
@@ -37,6 +37,40 @@ var filename = 'profile.jpg';
 
 ss(socket).emit('profile-image', stream, {name: filename});
 fs.createReadStream(filename).pipe(stream);
+```
+
+### Browser
+This module can be used on the browser. To do so, just copy the file to a public directory.
+
+    $ cp node_modules/socket.io-stream/socket.io-stream.js somewhere/public/
+
+You can also use [browserify](http://github.com/substack/node-browserify) to build this library manually.
+
+    $ npm install browserify -g
+    $ cd node_modules/socket.io-stream
+    $ browserify index.js -s ss > socket.io-stream.js
+
+Browser:
+```html
+<input id="file" type="file" />
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/socket.io-stream.js"></script>
+<script src="/js/jquery.js"></script>
+<script>
+$(function() {
+  var socket = io.connect('/foo');
+
+  $('#file').change(function(e) {
+    var file = e.target.files[0];
+    var stream = ss.createStream();
+
+    // upload a file to the server.
+    ss(socket).emit('file', stream, {size: file.size});
+    ss.createBlobReadStream(file).pipe(stream);
+  });
+});
+</script>
 ```
 
 ## License

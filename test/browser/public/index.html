@@ -4,28 +4,22 @@
   <title>Socket.IO Stream Test</title>
 </head>
 <body>
-<form id="form">
-  <input id="file" type="file" />
-  <input type="submit" value="Send" />
-<form>
+<input id="file" type="file" />
 
-<script type="text/javascript" src="/ss.js"></script>
-<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+<script src="/ss.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
 <script type="text/javascript">
 $(function() {
   var socket = io.connect('/foo');
-  var fileNode = $('#file')[0];
 
-  $('#form').submit(function(e) {
-    e.preventDefault();
-
-    var file = fileNode.files[0];
+  $('#file').change(function(e) {
+    var file = e.target.files[0];
     var stream = ss.createStream();
+
     ss(socket).emit('file', stream, {size: file.size}, function() {
       console.log('complete!');
     });
-
     ss.createBlobReadStream(file).pipe(stream);
   });
 });
