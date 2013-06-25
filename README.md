@@ -2,12 +2,13 @@
 [![Build Status](https://travis-ci.org/nkzawa/socket.io-stream.png?branch=master)](https://travis-ci.org/nkzawa/socket.io-stream)
 [![NPM version](https://badge.fury.io/js/socket.io-stream.png)](http://badge.fury.io/js/socket.io-stream)
 
-Bidirectional binary data transfer with Stream 2 API through [Socket.IO](https://github.com/LearnBoost/socket.io).
+This is the module for bidirectional binary data transfer with Stream 2 API through [Socket.IO](https://github.com/LearnBoost/socket.io).
 
 ## Installation
     $ npm install socket.io-stream
 
 ## Usage
+For streaming between servers and clients, you must send stream instances first.
 To receive streams, you just wrap `socket` with `socket.io-stream`, then listen any events as usual.
 
 Server:
@@ -24,7 +25,7 @@ io.of('/user').on('connection', function(socket) {
 });
 ```
 
-`createStream()` will creare a new writable stream which can be sent by `emit`.
+`createStream()` will return a new writable stream which can be sent by `emit`.
 
 Client:
 ```js
@@ -39,18 +40,19 @@ ss(socket).emit('profile-image', stream, {name: filename});
 fs.createReadStream(filename).pipe(stream);
 ```
 
+You can stream data from a client to server, and vice versa.
+
 ### Browser
-This module can be used on the browser. To do so, just copy the file to a public directory.
+This module can be used on the browser. To do so, just copy a file to a public directory.
 
     $ cp node_modules/socket.io-stream/socket.io-stream.js somewhere/public/
 
-You can also use [browserify](http://github.com/substack/node-browserify) to build this library manually.
+You can also use [browserify](http://github.com/substack/node-browserify) to build manually.
 
     $ npm install browserify -g
     $ cd node_modules/socket.io-stream
     $ browserify index.js -s ss > socket.io-stream.js
 
-Browser:
 ```html
 <input id="file" type="file" />
 
@@ -72,6 +74,23 @@ $(function() {
 });
 </script>
 ```
+
+## Documentation
+
+### ss(sio)
+Look up an existing `Socket` instance based on `sio` (a socket of Socket.IO), or create one if it doesn't exist.
+
+### socket.emit(event, ...)
+Emit an `event` with variable args including at least a stream.
+
+### socket.on(event, listener)
+Add a `listener` for `event`. `listener` will take streams with any data as arguments.
+
+### ss.createStream([options])
+Create a new writable stream. See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.
+
+### ss.createBlobReadStream(blob, [options])
+Create a new readable stream for [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) and [File](https://developer.mozilla.org/en-US/docs/Web/API/File). See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.
 
 ## License
 
