@@ -1,5 +1,5 @@
 
-// check for tests on the browser.
+// for tests on the browser.
 if ('undefined' != typeof require) {
   var chai = require('chai')
     , io = require('socket.io-client')

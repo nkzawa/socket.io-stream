@@ -1,17 +1,18 @@
 var fs = require('fs')
   , path = require('path')
   , http = require('http')
-  , url = require('url')
   , sio = require('socket.io')
-  , send = require('send')
+  , static = require('node-static')
   , ss = require('../../')
   , port = 8888;
 
 
+var file = new static.Server(__dirname + '/public');
+
 var server = http.createServer(function(req, res) {
-  send(req, url.parse(req.url).pathname)
-    .root(__dirname + '/public')
-    .pipe(res);
+  req.on('end', function() {
+    file.serve(req, res);
+  }).resume();
 });
 
 var io = sio.listen(server);

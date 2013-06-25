@@ -20,12 +20,14 @@
   "devDependencies": {
     "socket.io": "0.9.16",
     "socket.io-client": "0.9.16",
-    "mocha": "*",
+    "mocha": "1.9.0",
     "chai": "*",
     "async": "*",
     "checksum": "*",
-    "send": "*",
     "browserify": "*",
-    "uglify-js": "*"
+    "uglify-js": "*",
+    "phantomjs": "*",
+    "mocha-phantomjs": "*",
+    "node-static": "*"
   }
 }
