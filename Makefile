@@ -3,8 +3,7 @@ REPORTER = dot
 
 build:
 	@./node_modules/.bin/browserify index.js -s ss > bundle.js
-	@./node_modules/.bin/uglifyjs bundle.js\
-		--screw-ie8 --comments > socket.io-stream.js
+	@./node_modules/.bin/uglifyjs bundle.js --comments > socket.io-stream.js
 	@rm -f bundle.js
 
 test:
