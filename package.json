@@ -1,6 +1,6 @@
 {
   "name": "socket.io-stream",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "stream for socket.io",
   "author": "Naoyuki Kanezawa <naoyuki.kanezawa@gmail.com>",
   "keywords": [
