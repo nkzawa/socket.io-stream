@@ -33,7 +33,8 @@ test-unit:
 	@./node_modules/.bin/mocha --reporter $(REPORTER)
 
 test-acceptance:
-	@./node_modules/.bin/mocha --reporter $(REPORTER) --bail\
+	@./node_modules/.bin/mocha --reporter $(REPORTER) --bail \
+		--timeout 5000 \
 		test/acceptance/*.js
 
 test-browser: test-browser-unit
