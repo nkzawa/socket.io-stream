@@ -11,7 +11,7 @@
     "url": "git://github.com/nkzawa/socket.io-stream.git"
   },
   "scripts": {
-    "test": "make test"
+    "test": "make test-all"
   },
   "dependencies": {
     "readable-stream": "1.0.2",
@@ -20,7 +20,7 @@
   "devDependencies": {
     "socket.io": "0.9.16",
     "socket.io-client": "0.9.16",
-    "mocha": "1.9.0",
+    "mocha": "*",
     "chai": "*",
     "async": "*",
     "checksum": "*",

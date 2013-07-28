@@ -3,25 +3,13 @@
 if ('undefined' != typeof require) {
   var chai = require('chai')
     , io = require('socket.io-client')
-    , ss = require('../');
+    , ss = require('../')
+    , support = require('./support');
 }
 
-var expect = chai.expect;
+var expect = chai.expect
+  , client = support.client;
 
-function client(path, options) {
-  path = path || '';
-  options = options || {};
-
-  var _options = {
-    'force new connection': true,
-    'auto connect': false
-  };
-  for (var key in options) {
-    _options[key] = options[key];
-  }
-
-  return io.connect('http://localhost' + path, _options);
-}
 
 describe('socket.io-stream', function() {
   describe('lookup', function() {
@@ -39,7 +27,7 @@ describe('socket.io-stream', function() {
       socket.emit('foo', stream);
       expect(function() {
         socket.emit('bar', stream);
-      }).to.throw(Error);;
+      }).to.throw(Error);
     });
   });
 
