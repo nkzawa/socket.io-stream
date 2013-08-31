@@ -37,7 +37,7 @@ describe('socket.io-stream', function() {
         , stream = ss.createStream();
 
       function writeStreams() {
-        return Object.keys(socket.writeStreams);
+        return Object.keys(socket.streams);
       }
 
       socket.emit('foo', stream);
@@ -57,7 +57,7 @@ describe('socket.io-stream', function() {
         , stream = ss.createStream();
 
       function readStreams() {
-        return Object.keys(socket.readStreams);
+        return Object.keys(socket.streams);
       }
 
       socket.on('foo', function(stream) {
