@@ -25,7 +25,7 @@ io.of('/user').on('connection', function(socket) {
 });
 ```
 
-`createStream()` will return a new writable stream which can be sent by `emit`.
+`createStream()` will return a new stream which can be sent by `emit`.
 
 Client:
 ```js
@@ -87,7 +87,7 @@ Emit an `event` with variable args including at least a stream.
 Add a `listener` for `event`. `listener` will take streams with any data as arguments.
 
 ### ss.createStream([options])
-Create a new writable stream. See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.
+Create a new duplex stream. See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.
 
 ### ss.createBlobReadStream(blob, [options])
 Create a new readable stream for [Blob](https://developer.mozilla.org/en-US/docs/Web/API/Blob) and [File](https://developer.mozilla.org/en-US/docs/Web/API/File). See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.

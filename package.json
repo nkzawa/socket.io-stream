@@ -1,10 +1,20 @@
 {
   "name": "socket.io-stream",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "stream for socket.io",
   "author": "Naoyuki Kanezawa <naoyuki.kanezawa@gmail.com>",
+  "contributors": [
+    {
+      "name": "Naoyuki Kanezawa",
+      "email": "naoyuki.kanezawa@gmail.com"
+    },
+    {
+      "name": "Aaron O'Mullan",
+      "email": "aaron.omullan@friendco.de"
+    }
+  ],
   "keywords": [
-    "stream", "socket.io", "binary", "file", "upload"
+    "stream", "socket.io", "binary", "file", "upload", "download"
   ],
   "repository": {
     "type": "git",
