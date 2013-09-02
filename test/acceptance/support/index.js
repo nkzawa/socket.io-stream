@@ -11,7 +11,10 @@ if (server.version) {
     path = path || '';
     options = options || {};
 
-    var _options = {'force new connection': true};
+    var _options = {
+      'force new connection': true,
+      'reconnect': false
+    };
     for (var key in options) {
       _options[key] = options[key];
     }
@@ -20,7 +23,7 @@ if (server.version) {
   };
 
   exports.startServer = function(done) {
-    this.io = server.listen(port, done);
+    this.io = server.listen(port, {'log level': 1}, done);
   };
 
   exports.stopServer = function(done) {
@@ -40,7 +43,10 @@ if (server.version) {
     path = path || '';
     options = options || {};
 
-    var _options = {forceNew: true};
+    var _options = {
+      forceNew: true,
+      reconnection: false
+    };
     for (var key in options) {
       _options[key] = options[key];
     }

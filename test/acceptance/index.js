@@ -1,5 +1,4 @@
 var fs = require('fs')
-  , path = require('path')
   , expect = require('chai').expect
   , async = require('async')
   , checksum = require('checksum')
@@ -14,54 +13,152 @@ describe('socket.io-stream', function() {
   afterEach(support.stopServer);
 
   describe('streaming', function() {
-    var filename = path.join(__dirname, 'resources/frog.jpg')
+    var filename = __dirname + '/resources/frog.jpg'
       , _filename = filename + '.tmp';
 
-    it('should be able to pipe a file to the server', function(done) {
-      this.io.of('/foo').on('connection', function(socket) {
-        ss(socket).on('file', function(stream, data, callback) {
+    afterEach(function(done) {
+      fs.unlink(_filename, done);
+    });
+
+    describe('emit to server', function() {
+      it('should be able to send a file to the server', function(done) {
+        this.io.of('/foo').on('connection', function(socket) {
+          ss(socket).on('file', function(stream, data, callback) {
+            expect(data.name).to.eql(filename);
+
+            var dst = fs.createWriteStream(_filename);
+            // use 'close' since 'finish' is not supported on the old Stream.
+            dst.on('close', callback);
+            stream.pipe(dst);
+          });
+        });
+
+        var socket = client('/foo');
+        socket.on('connect', function() {
+          var stream = ss.createStream();
+
+          ss(socket).emit('file', stream, {name: filename}, function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              // check if two files are equal.
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          fs.createReadStream(filename).pipe(stream);
+        });
+      });
+
+      it('should be able to send a file to the client', function(done) {
+        this.io.of('/foo').on('connection', function(socket) {
+          ss(socket).on('file', function(stream, data) {
+            expect(data.name).to.eql(filename);
+            fs.createReadStream(filename).pipe(stream);
+          });
+        });
+
+        var socket = client('/foo');
+        socket.on('connect', function() {
+          var stream = ss.createStream();
+          ss(socket).emit('file', stream, {name: filename});
+
+          var dst = fs.createWriteStream(_filename);
+          dst.on('close', function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          stream.pipe(dst);
+        });
+      });
+
+      it('should be able to send back a file', function(done) {
+        this.io.of('/foo').on('connection', function(socket) {
+          ss(socket).on('file', function(stream, data) {
+            expect(data.name).to.eql(filename);
+            stream.pipe(stream);
+          });
+        });
+
+        var socket = client('/foo');
+        socket.on('connect', function() {
+          var stream = ss.createStream();
+          ss(socket).emit('file', stream, {name: filename});
+
+          var dst = fs.createWriteStream(_filename);
+          dst.on('close', function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          fs.createReadStream(filename).pipe(stream).pipe(dst);
+        });
+      });
+    });
+
+    describe('emit to client', function() {
+      it('should be able to send a file to the server', function(done) {
+        this.io.of('/foo').on('connection', function(socket) {
+          var stream = ss.createStream();
+          ss(socket).emit('file', stream, {name: filename});
+
+          var dst = fs.createWriteStream(_filename);
+          dst.on('close', function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          stream.pipe(dst);
+        });
+
+        ss(client('/foo')).on('file', function(stream, data, callback) {
+          expect(data.name).to.eql(filename);
+          fs.createReadStream(filename).pipe(stream);
+        });
+      });
+
+      it('should be able to send a file to the client', function(done) {
+        this.io.of('/foo').on('connection', function(socket) {
+          var stream = ss.createStream();
+          ss(socket).emit('file', stream, {name: filename}, function(unused) {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          fs.createReadStream(filename).pipe(stream);
+        });
+
+        ss(client('/foo')).on('file', function(stream, data, callback) {
           expect(data.name).to.eql(filename);
 
           var dst = fs.createWriteStream(_filename);
-          // use 'close' since 'finish' is not supported on the old Stream.
           dst.on('close', callback);
           stream.pipe(dst);
         });
       });
 
-      var socket = client('/foo')
-        , stream = ss.createStream();
+      it('should be able to send back a file', function(done) {
+        this.io.of('/foo').on('connection', function(socket) {
+          var stream = ss.createStream();
+          ss(socket).emit('file', stream, {name: filename});
 
-      socket.on('connect', function() {
-        ss(socket).emit('file', stream, {name: filename}, function() {
-          async.map([filename, _filename], checksum.file, function(err, sums) {
-            // check if two files are equal.
-            expect(sums[0]).to.eql(sums[1]);
-            done();
+          var dst = fs.createWriteStream(_filename);
+          dst.on('close', function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
           });
+          fs.createReadStream(filename).pipe(stream).pipe(dst);
         });
-        fs.createReadStream(filename).pipe(stream);
-      });
-    });
 
-    it('should be able to pipe a file to the client', function(done) {
-      this.io.of('/foo').on('connection', function(socket) {
-        var stream = ss.createStream();
-        ss(socket).emit('file', stream, {name: filename}, function(unused) {
-          async.map([filename, _filename], checksum.file, function(err, sums) {
-            expect(sums[0]).to.eql(sums[1]);
-            done();
-          });
+        ss(client('/foo')).on('file', function(stream, data) {
+          expect(data.name).to.eql(filename);
+          stream.pipe(stream);
         });
-        fs.createReadStream(filename).pipe(stream);
-      });
-
-      ss(client('/foo')).on('file', function(stream, data, callback) {
-        expect(data.name).to.eql(filename);
-
-        var dst = fs.createWriteStream(_filename);
-        dst.on('close', callback);
-        stream.pipe(dst);
       });
     });
   });

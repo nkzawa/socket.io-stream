@@ -36,46 +36,33 @@ describe('socket.io-stream', function() {
       var socket = ss(client())
         , stream = ss.createStream();
 
-      function writeStreams() {
+      function streams() {
         return Object.keys(socket.streams);
       }
 
-      socket.emit('foo', stream);
-      expect(writeStreams().length).to.eql(1);
-      stream.emit('finish');
-      expect(writeStreams().length).to.eql(0);
-
       stream = ss.createStream();
-      socket.emit('bar', stream);
-      expect(writeStreams().length).to.eql(1);
+      socket.emit('foo', stream);
+      expect(streams().length).to.eql(1);
       stream.emit('error', new Error());
-      expect(writeStreams().length).to.eql(0);
+      expect(streams().length).to.eql(0);
     });
 
     it('should clean up read-streams on end and error', function() {
       var socket = ss(client())
         , stream = ss.createStream();
 
-      function readStreams() {
+      function streams() {
         return Object.keys(socket.streams);
       }
 
       socket.on('foo', function(stream) {
-        expect(readStreams().length).to.eql(1);
-        stream.emit('end');
-        expect(readStreams().length).to.eql(0);
+        expect(streams().length).to.eql(1);
+        stream.emit('error', new Error());
+        expect(streams().length).to.eql(0);
       });
 
       // emit a new stream event manually.
-      socket._onstream([0], 'foo', 0);
-
-      socket.on('bar', function(stream) {
-        expect(readStreams().length).to.eql(1);
-        stream.emit('error', new Error());
-        expect(readStreams().length).to.eql(0);
-      });
-
-      socket._onstream([0], 'bar', 1);
+      socket._onstream([0], 'foo', 1);
     });
   });
 });
