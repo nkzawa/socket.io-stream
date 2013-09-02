@@ -32,7 +32,7 @@ describe('socket.io-stream', function() {
   });
 
   describe('clean up', function() {
-    it('should clean up write-streams on finish and error', function() {
+    it('should clean up local streams on error', function() {
       var socket = ss(client())
         , stream = ss.createStream();
 
@@ -47,7 +47,7 @@ describe('socket.io-stream', function() {
       expect(streams().length).to.eql(0);
     });
 
-    it('should clean up read-streams on end and error', function() {
+    it('should clean up remote streams on error', function() {
       var socket = ss(client())
         , stream = ss.createStream();
 

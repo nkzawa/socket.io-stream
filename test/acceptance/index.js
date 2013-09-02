@@ -164,11 +164,11 @@ describe('socket.io-stream', function() {
   });
 
   describe('errors', function() {
-    it('should send errors to write-stream', function(done) {
+    it('should send a stream error of client to server', function(done) {
       this.io.sockets.on('connection', function(socket) {
         ss(socket).on('foo', function(stream) {
           stream.on('error', function(err) {
-            expect(err.message).to.eql('error on write-stream');
+            expect(err.message).to.eql('error on the client');
             done()
           });
         });
@@ -179,14 +179,14 @@ describe('socket.io-stream', function() {
 
       socket.on('connect', function() {
         ss(socket).emit('foo', stream);
-        stream.emit('error', new Error('error on write-stream'));
+        stream.emit('error', new Error('error on the client'));
       });
     });
 
-    it('should send errors to read-stream', function(done) {
+    it('should send a stream error of server to client', function(done) {
       this.io.sockets.on('connection', function(socket) {
         ss(socket).on('foo', function(stream) {
-          stream.emit('error', new Error('error on read-stream'));
+          stream.emit('error', new Error('error on the server'));
         });
       });
 
@@ -196,7 +196,7 @@ describe('socket.io-stream', function() {
       socket.on('connect', function() {
         ss(socket).emit('foo', stream);
         stream.on('error', function(err) {
-          expect(err.message).to.eql('error on read-stream');
+          expect(err.message).to.eql('error on the server');
           done()
         });
       });
