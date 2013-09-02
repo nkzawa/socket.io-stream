@@ -12,7 +12,8 @@ if (io.version) {
 
     var _options = {
       'force new connection': true,
-      'auto connect': false
+      'auto connect': false,
+      'reconnect': false
     };
 
     for (var key in options) {
@@ -29,7 +30,10 @@ if (io.version) {
     path = path || '';
     options = options || {};
 
-    var _options = {forceNew: true};
+    var _options = {
+      forceNew: true,
+      reconnection: false
+    };
     for (var key in options) {
       _options[key] = options[key];
     }
