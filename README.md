@@ -83,8 +83,8 @@ Look up an existing `Socket` instance based on `sio` (a socket of Socket.IO), or
 ### socket.emit(event, ...)
 Emit an `event` with variable args including at least a stream.
 
-### socket.on(event, listener)
-Add a `listener` for `event`. `listener` will take streams with any data as arguments.
+### socket.on(event, [options], [listener])
+Add a `listener` for `event`. `listener` will take streams with any data as arguments. `options` is an object for streams.
 
 ### ss.createStream([options])
 Create a new duplex stream. See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.
