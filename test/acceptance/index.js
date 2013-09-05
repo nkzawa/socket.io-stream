@@ -95,6 +95,31 @@ describe('socket.io-stream', function() {
           fs.createReadStream(filename).pipe(stream).pipe(dst);
         });
       });
+
+      it('should be able to handle multiple streams', function(done) {
+        this.io.on('connection', function(socket) {
+          ss(socket).on('foo', function(stream1, stream2) {
+            stream1.pipe(stream2);
+          });
+        });
+
+        var socket = client();
+        socket.on('connect', function() {
+          var stream1 = ss.createStream();
+          var stream2 = ss.createStream();
+          ss(socket).emit('foo', stream1, stream2);
+
+          var dst = fs.createWriteStream(_filename);
+          dst.on('close', function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          fs.createReadStream(filename).pipe(stream1);
+          stream2.pipe(dst);
+        });
+      });
     });
 
     describe('emit to client', function() {
@@ -158,6 +183,28 @@ describe('socket.io-stream', function() {
         ss(client('/foo')).on('file', function(stream, data) {
           expect(data.name).to.eql(filename);
           stream.pipe(stream);
+        });
+      });
+
+      it('should be able to handle multiple streams', function(done) {
+        this.io.on('connection', function(socket) {
+          var stream1 = ss.createStream();
+          var stream2 = ss.createStream();
+          ss(socket).emit('foo', stream1, stream2);
+
+          var dst = fs.createWriteStream(_filename);
+          dst.on('close', function() {
+            async.map([filename, _filename], checksum.file, function(err, sums) {
+              expect(sums[0]).to.eql(sums[1]);
+              done();
+            });
+          });
+          fs.createReadStream(filename).pipe(stream1);
+          stream2.pipe(dst);
+        });
+
+        ss(client()).on('foo', function(stream1, stream2) {
+          stream1.pipe(stream2);
         });
       });
     });
