@@ -24,10 +24,10 @@
     "test": "make test-all"
   },
   "dependencies": {
-    "readable-stream": "1.0.2",
-    "debug": "*"
+    "readable-stream": "1.0.2"
   },
   "devDependencies": {
+    "debug": "*",
     "socket.io": "0.9.16",
     "socket.io-client": "0.9.16",
     "mocha": "*",
