@@ -1,4 +1,5 @@
 var fs = require('fs')
+  , _ = require('underscore')
   , expect = require('chai').expect
   , async = require('async')
   , checksum = require('checksum')
@@ -231,6 +232,7 @@ describe('socket.io-stream', function() {
     });
 
     it('should send a stream error of server to client', function(done) {
+
       this.io.sockets.on('connection', function(socket) {
         ss(socket).on('foo', function(stream) {
           stream.emit('error', new Error('error on the server'));
@@ -244,10 +246,46 @@ describe('socket.io-stream', function() {
         ss(socket).emit('foo', stream);
         stream.on('error', function(err) {
           expect(err.message).to.eql('error on the server');
-          done()
+          done();
         });
       });
     });
+  });
+
+  describe('order', function() {
+    it('should send/receive writes in order', function(done) {
+      var nums = _.map(_.range(5), String);
+
+      // Server
+      this.io.sockets.on('connection', function(socket) {
+        ss(socket).on('foo', function(stream) {
+          // Write nums to stream
+          _.each(nums, function(num) {
+            stream.write(num);
+          });
+        });
+      });
+
+      // Client
+      var socket = client()
+        , stream = ss.createStream();
+
+
+      socket.on('connect', function() {
+        ss(socket).emit('foo', stream);
+        var x = [];
+        stream.on('data', function(num) {
+          x.push(num.toString());
+          // Got everything
+          if(x.length >= nums.length) {
+            expect(_.isEqual(nums, x)).to.be.true;
+            // Finished
+            done();
+          }
+          //stream.read();
+        });
+      });
+    })
   });
 });
 

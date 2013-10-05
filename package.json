@@ -28,6 +28,7 @@
     "debug": "*"
   },
   "devDependencies": {
+    "underscore": "1.4.4",
     "socket.io": "0.9.16",
     "socket.io-client": "0.9.16",
     "mocha": "*",
