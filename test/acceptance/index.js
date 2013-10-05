@@ -12,7 +12,7 @@ var fs = require('fs')
 describe('socket.io-stream', function() {
   beforeEach(support.startServer);
   afterEach(support.stopServer);
-/*
+
   describe('streaming', function() {
     var filename = __dirname + '/resources/frog.jpg'
       , _filename = filename + '.tmp';
@@ -210,7 +210,7 @@ describe('socket.io-stream', function() {
       });
     });
   });
-*/
+
   describe('errors', function() {
     it('should send a stream error of client to server', function(done) {
       this.io.sockets.on('connection', function(socket) {
