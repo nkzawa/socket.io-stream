@@ -9,8 +9,12 @@ var fs = require('fs')
 
 
 describe('socket.io-stream', function() {
-  beforeEach(support.startServer);
-  afterEach(support.stopServer);
+  beforeEach(function(done) {
+    support.startServer(this, done);
+  });
+  afterEach(function(done) {
+    support.stopServer(this, done);
+  });
 
   describe('streaming', function() {
     var filename = __dirname + '/resources/frog.jpg'

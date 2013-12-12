@@ -22,18 +22,18 @@ if (server.version) {
     return io.connect('http://localhost:' + port + path, _options);
   };
 
-  exports.startServer = function(done) {
-    this.io = server.listen(port, {'log level': 1}, done);
+  exports.startServer = function(context, done) {
+    context.io = server.listen(port, {'log level': 1}, done);
   };
 
-  exports.stopServer = function(done) {
-    var sockets = this.io.sockets.sockets;
+  exports.stopServer = function(context, done) {
+    var sockets = context.io.sockets.sockets;
     for (var sid in sockets) {
       if (sockets.hasOwnProperty(sid)) {
         sockets[sid].disconnect();
       }
     }
-    this.io.server.close(done);
+    context.io.server.close(done);
   };
 
 } else {
@@ -54,16 +54,16 @@ if (server.version) {
     return io('http://localhost:' + port + path, _options);
   };
 
-  exports.startServer = function(done) {
-    this.server = http.Server();
-    this.io = server(this.server);
-    this.server.listen(port, done);
+  exports.startServer = function(context, done) {
+    context.server = http.Server();
+    context.io = server(context.server);
+    context.server.listen(port, done);
   };
 
-  exports.stopServer = function(done) {
-    this.io.sockets.sockets.slice().forEach(function(socket) {
+  exports.stopServer = function(context, done) {
+    context.io.sockets.sockets.slice().forEach(function(socket) {
       socket.disconnect(true);
     });
-    this.server.close(done);
+    context.server.close(done);
   };
 }
