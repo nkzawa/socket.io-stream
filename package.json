@@ -21,10 +21,11 @@
     "url": "git://github.com/nkzawa/socket.io-stream.git"
   },
   "scripts": {
-    "test": "make test-all"
+    "test": "make test-all",
+    "prepublish": "make test-all build"
   },
   "dependencies": {
-    "readable-stream": "1.0.2",
+    "readable-stream": "1.1.9",
     "debug": "*"
   },
   "devDependencies": {
@@ -34,7 +35,7 @@
     "chai": "*",
     "async": "*",
     "checksum": "*",
-    "browserify": "*",
+    "browserify": "2.36.1",
     "uglify-js": "*",
     "phantomjs": "*",
     "mocha-phantomjs": "*",

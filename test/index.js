@@ -63,14 +63,11 @@ describe('socket.io-stream', function() {
 
       it('should be cleaned up on finish', function(done) {
         var self = this;
-        // clean up is done on nextTick.
-        this.stream.emit('finish');
         this.stream.on('end', function() {
-          setTimeout(function() {
-            expect(self.streams().length).to.eql(0);
-            done();
-          }, 0);
+          expect(self.streams().length).to.eql(0);
+          done();
         });
+        this.stream.emit('finish');
       });
 
       it('should be cleaned up on end', function() {
@@ -98,14 +95,11 @@ describe('socket.io-stream', function() {
 
       it('should be cleaned up on finish', function(done) {
         var self = this;
-        // clean up is not done on this tick.
-        this.stream.emit('finish');
         this.stream.on('end', function() {
-          setTimeout(function() {
-            expect(self.streams().length).to.eql(0);
-            done();
-          }, 0);
+          expect(self.streams().length).to.eql(0);
+          done();
         });
+        this.stream.emit('finish');
       });
 
       it('should be cleaned up on end', function() {
