@@ -40,11 +40,7 @@ test-acceptance:
 test-browser: test-browser-unit
 
 test-browser-unit: build
-	@echo "Starting server..."
-	@./node_modules/.bin/static test -p 8888 & echo $$! > pid.txt
-	@./node_modules/.bin/mocha-phantomjs http://localhost:8888
-	@kill -9 `cat pid.txt`
-	@rm -f pid.txt
+	@./node_modules/.bin/mocha-phantomjs test/index.html
 
 clean:
 	find ./test -name "*.tmp" -exec rm {} +
