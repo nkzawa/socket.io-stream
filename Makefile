@@ -40,7 +40,7 @@ test-acceptance:
 test-browser: test-browser-unit
 
 test-browser-unit: build
-	@./node_modules/.bin/mocha-phantomjs test/index.html
+	@./node_modules/.bin/mocha-phantomjs --reporter $(REPORTER) test/index.html
 
 clean:
 	find ./test -name "*.tmp" -exec rm {} +
