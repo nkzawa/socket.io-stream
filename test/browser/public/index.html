@@ -4,7 +4,7 @@
   <title>Socket.IO Stream Test</title>
 </head>
 <body>
-<input id="file" type="file" />
+<input type="file" />
 
 <script src="/ss.js"></script>
 <script src="/socket.io/socket.io.js"></script>
@@ -13,14 +13,21 @@
 $(function() {
   var socket = io.connect('/foo');
 
-  $('#file').change(function(e) {
+  $('input[type=file]').change(function(e) {
     var file = e.target.files[0];
     var stream = ss.createStream();
+    var blob = ss.createBlobReadStream(file);
+    var size = 0;
+
+    blob.on('data', function(chunk) {
+      size += chunk.length;
+      console.log(Math.floor(size / file.size * 100) + '%');
+    });
 
     ss(socket).emit('file', stream, {size: file.size}, function() {
       console.log('complete!');
     });
-    ss.createBlobReadStream(file).pipe(stream);
+    blob.pipe(stream);
   });
 });
 </script>
