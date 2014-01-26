@@ -78,17 +78,17 @@ $(function() {
 #### Upload progress
 You can track upload progress like the following:
 
-```html
-  var blobStream = ss.createBlobReadStream(file);
-  var size = 0;
+```js
+var blobStream = ss.createBlobReadStream(file);
+var size = 0;
 
-  blobStream.on('data', function(chunk) {
-    size += chunk.length;
-    console.log(Math.floor(size / file.size * 100) + '%');
-    // e.g. '42%'
-  });
+blobStream.on('data', function(chunk) {
+  size += chunk.length;
+  console.log(Math.floor(size / file.size * 100) + '%');
+  // e.g. '42%'
+});
 
-  blobStream.pipe(stream);
+blobStream.pipe(stream);
 ```
 
 ## Documentation
