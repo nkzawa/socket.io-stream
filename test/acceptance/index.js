@@ -78,7 +78,7 @@ describe('socket.io-stream', function() {
 
       it('should be able to send back a file', function(done) {
         this.io.of('/foo').on('connection', function(socket) {
-          ss(socket).on('file', function(stream, data) {
+          ss(socket, {allowHalfOpen: true}).on('file', function(stream, data) {
             expect(data.name).to.eql(filename);
             stream.pipe(stream);
           });
