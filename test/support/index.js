@@ -20,7 +20,7 @@ if (io.version) {
       _options[key] = options[key];
     }
 
-    return io.connect('http://localhost' + path, _options);
+    return io.connect(path, _options);
   };
 
 } else {
@@ -38,7 +38,7 @@ if (io.version) {
       _options[key] = options[key];
     }
 
-    return io('http://localhost' + path, _options);
+    return io(path, _options);
   };
 }
 

@@ -9,17 +9,17 @@ build:
 
 install-0.9:
 	@echo "Installing socket.io 0.9..."
-	@npm install socket.io@0.9
-	@npm install socket.io-client@0.9
+	@npm install --cache-min 999999 socket.io@0.9
+	@npm install --cache-min 999999 socket.io-client@0.9
 	@rm -f test/support/socket.io.js
 	@ln -s ../../node_modules/socket.io-client/dist/socket.io.js test/support/socket.io.js
 
 install-1.0:
 	@echo "Installing socket.io 1.0..."
-	@npm install nkzawa/socket.io
-	@npm install nkzawa/socket.io-client
+	@npm install --cache-min 999999 socket.io@1.0.0-pre
+	@npm install --cache-min 999999 socket.io-client@1.0.0-pre
 	@rm -f test/support/socket.io.js
-	@ln -s ../../node_modules/socket.io-client/socket.io-client.js test/support/socket.io.js
+	@ln -s ../../node_modules/socket.io-client/socket.io.js test/support/socket.io.js
 
 test-all:
 	@$(MAKE) install-1.0
