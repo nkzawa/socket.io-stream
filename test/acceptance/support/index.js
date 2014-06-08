@@ -1,7 +1,7 @@
-var http = require('http')
-  , server = require('socket.io')
-  , io = require('socket.io-client')
-  , port = 8888;
+var http = require('http');
+var server = require('socket.io');
+var io = require('socket.io-client');
+var port = 8888;
 
 
 if (server.version) {

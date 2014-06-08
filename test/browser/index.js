@@ -1,10 +1,10 @@
-var fs = require('fs')
-  , path = require('path')
-  , http = require('http')
-  , sio = require('socket.io')
-  , static = require('node-static')
-  , ss = require('../../')
-  , port = 8888;
+var fs = require('fs');
+var path = require('path');
+var http = require('http');
+var sio = require('socket.io');
+var static = require('node-static');
+var ss = require('../../');
+var port = 8888;
 
 
 var file = new static.Server(__dirname + '/public');

@@ -1,14 +1,14 @@
 
 // for tests on the browser.
 if ('undefined' != typeof require) {
-  var chai = require('chai')
-    , io = require('socket.io-client')
-    , ss = require('../')
-    , support = require('./support');
+  var chai = require('chai');
+  var io = require('socket.io-client');
+  var ss = require('../');
+  var support = require('./support');
 }
 
-var expect = chai.expect
-  , client = support.client;
+var expect = chai.expect;
+var client = support.client;
 
 
 describe('socket.io-stream', function() {
@@ -21,8 +21,8 @@ describe('socket.io-stream', function() {
 
   describe('errors', function() {
     it('should throw an error when resending streams', function() {
-      var socket = ss(client())
-        , stream = ss.createStream();
+      var socket = ss(client());
+      var stream = ss.createStream();
 
       socket.emit('foo', stream);
       expect(function() {
@@ -31,8 +31,8 @@ describe('socket.io-stream', function() {
     });
 
     it('should throw an error when sending destroyed streams', function() {
-      var socket = ss(client())
-        , stream = ss.createStream();
+      var socket = ss(client());
+      var stream = ss.createStream();
 
       stream.destroy();
       expect(function() {

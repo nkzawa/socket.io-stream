@@ -1,11 +1,11 @@
-var fs = require('fs')
-  , expect = require('chai').expect
-  , async = require('async')
-  , checksum = require('checksum')
-  , ss = require('../../')
-  , support = require('./support')
-  , client = support.client
-  , port = 8888;
+var fs = require('fs');
+var expect = require('chai').expect;
+var async = require('async');
+var checksum = require('checksum');
+var ss = require('../../');
+var support = require('./support');
+var client = support.client;
+var port = 8888;
 
 
 describe('socket.io-stream', function() {
@@ -17,8 +17,8 @@ describe('socket.io-stream', function() {
   });
 
   describe('streaming', function() {
-    var filename = __dirname + '/resources/frog.jpg'
-      , _filename = filename + '.tmp';
+    var filename = __dirname + '/resources/frog.jpg';
+    var _filename = filename + '.tmp';
 
     afterEach(function(done) {
       fs.unlink(_filename, done);
@@ -225,8 +225,8 @@ describe('socket.io-stream', function() {
         });
       });
 
-      var socket = client()
-        , stream = ss.createStream();
+      var socket = client();
+      var stream = ss.createStream();
 
       socket.on('connect', function() {
         ss(socket).emit('foo', stream);
@@ -241,8 +241,8 @@ describe('socket.io-stream', function() {
         });
       });
 
-      var socket = client()
-        , stream = ss.createStream();
+      var socket = client();
+      var stream = ss.createStream();
 
       socket.on('connect', function() {
         ss(socket).emit('foo', stream);
