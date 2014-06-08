@@ -24,17 +24,17 @@
     "test": "make test-all"
   },
   "dependencies": {
-    "readable-stream": "1.1.9",
-    "debug": "*"
+    "readable-stream": "1.0.27-1",
+    "debug": "1.0.1"
   },
   "devDependencies": {
-    "socket.io": "0.9.16",
-    "socket.io-client": "0.9.16",
+    "socket.io": "1.0.4",
+    "socket.io-client": "1.0.4",
     "mocha": "*",
     "chai": "*",
     "async": "*",
     "checksum": "*",
-    "browserify": "2.36.1",
+    "browserify": "3.46.1",
     "uglify-js": "*",
     "phantomjs": "*",
     "mocha-phantomjs": "*",

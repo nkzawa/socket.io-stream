@@ -16,15 +16,15 @@ install-0.9:
 
 install-1.0:
 	@echo "Installing socket.io 1.0..."
-	@npm install --cache-min 999999 socket.io@1.0.0-pre
-	@npm install --cache-min 999999 socket.io-client@1.0.0-pre
+	@npm install --cache-min 999999 socket.io@1.0
+	@npm install --cache-min 999999 socket.io-client@1.0
 	@rm -f test/support/socket.io.js
 	@ln -s ../../node_modules/socket.io-client/socket.io.js test/support/socket.io.js
 
 test-all:
-	@$(MAKE) install-1.0
-	@$(MAKE) test
 	@$(MAKE) install-0.9
+	@$(MAKE) test
+	@$(MAKE) install-1.0
 	@$(MAKE) test
 
 test: test-unit test-acceptance test-browser
