@@ -1,10 +1,13 @@
 if ('undefined' != typeof require) {
   var io = require('socket.io-client');
+  var ss = require('../../');
 }
 
 ;(function(exports) {
 
 if (io.version) {
+  ss.forceBase64 = true;
+
   // 0.9.x
   exports.client = function(path, options) {
     path = path || '';

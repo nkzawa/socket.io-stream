@@ -1,11 +1,14 @@
 var http = require('http');
 var server = require('socket.io');
 var io = require('socket.io-client');
+var ss = require('../../');
 var port = 8888;
 
 
 if (server.version) {
   // 0.9.x
+
+  ss.forceBase64 = true;
 
   exports.client = function(path, options) {
     path = path || '';
