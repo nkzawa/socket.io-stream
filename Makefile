@@ -3,9 +3,7 @@ REPORTER = dot
 
 build:
 	@echo "Building..."
-	@./node_modules/.bin/browserify index.js -s ss > bundle.js
-	@./node_modules/.bin/uglifyjs bundle.js --comments > socket.io-stream.js
-	@rm -f bundle.js
+	@./node_modules/.bin/browserify index.js -s ss > socket.io-stream.js
 
 install-0.9:
 	@echo "Installing socket.io 0.9..."

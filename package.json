@@ -14,7 +14,12 @@
     }
   ],
   "keywords": [
-    "stream", "socket.io", "binary", "file", "upload", "download"
+    "stream",
+    "socket.io",
+    "binary",
+    "file",
+    "upload",
+    "download"
   ],
   "repository": {
     "type": "git",
@@ -24,20 +29,16 @@
     "test": "make test-all"
   },
   "dependencies": {
-    "readable-stream": "1.0.27-1",
-    "debug": "1.0.1"
+    "debug": "~2.0.0"
   },
   "devDependencies": {
-    "socket.io": "1.0.4",
-    "socket.io-client": "1.0.4",
-    "mocha": "*",
-    "chai": "*",
-    "async": "*",
-    "checksum": "*",
-    "browserify": "3.46.1",
-    "uglify-js": "*",
-    "phantomjs": "*",
-    "mocha-phantomjs": "*",
-    "node-static": "*"
+    "async": "~0.9.0",
+    "browserify": "~5.12.0",
+    "chai": "~1.9.1",
+    "checksum": "~0.1.1",
+    "mocha": "~1.21.4",
+    "mocha-phantomjs": "~3.5.0",
+    "socket.io": "~1.1.0",
+    "socket.io-client": "~1.1.0"
   }
 }
