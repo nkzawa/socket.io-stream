@@ -1,4 +1,10 @@
 language: node_js
+install:
+  - npm install
+  - make install
 node_js:
   - 0.10
   - 0.11
+env:
+  - SOCKETIO_VERSION=0.9
+  - SOCKETIO_VERSION=1

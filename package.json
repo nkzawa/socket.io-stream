@@ -26,7 +26,7 @@
     "url": "git://github.com/nkzawa/socket.io-stream.git"
   },
   "scripts": {
-    "test": "make test-all"
+    "test": "make test"
   },
   "dependencies": {
     "debug": "~2.0.0"

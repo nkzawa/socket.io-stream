@@ -27,7 +27,7 @@ if (io.version) {
   };
 
 } else {
-  // 1.0.x
+  // 1.x.x
 
   exports.client = function(path, options) {
     path = path || '';
@@ -35,6 +35,7 @@ if (io.version) {
 
     var _options = {
       forceNew: true,
+      autoConnect: false,
       reconnection: false
     };
     for (var key in options) {

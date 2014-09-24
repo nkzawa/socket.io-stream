@@ -2,28 +2,17 @@
 REPORTER = dot
 
 build:
-	@echo "Building..."
 	@./node_modules/.bin/browserify index.js -s ss > socket.io-stream.js
 
-install-0.9:
-	@echo "Installing socket.io 0.9..."
+install:
+ifeq ($(SOCKETIO_VERSION), 0.9)
 	@npm install --cache-min 999999 socket.io@0.9
 	@npm install --cache-min 999999 socket.io-client@0.9
-	@rm -f test/support/socket.io.js
-	@ln -s ../../node_modules/socket.io-client/dist/socket.io.js test/support/socket.io.js
-
-install-1.0:
-	@echo "Installing socket.io 1.0..."
-	@npm install --cache-min 999999 socket.io@1.0
-	@npm install --cache-min 999999 socket.io-client@1.0
-	@rm -f test/support/socket.io.js
-	@ln -s ../../node_modules/socket.io-client/socket.io.js test/support/socket.io.js
-
-test-all:
-	@$(MAKE) install-0.9
-	@$(MAKE) test
-	@$(MAKE) install-1.0
-	@$(MAKE) test
+	@ln -fs ../../node_modules/socket.io-client/dist/socket.io.js test/support/socket.io.js
+else
+	@npm install
+	@ln -fs ../../node_modules/socket.io-client/socket.io.js test/support/socket.io.js
+endif
 
 test: test-unit test-acceptance test-browser
 
@@ -43,4 +32,4 @@ test-browser-unit: build
 clean:
 	find ./test -name "*.tmp" -exec rm {} +
 
-.PHONY: build test-all test test-unit test-acceptance test-browser test-browser-unit clean
+.PHONY: build install test test-unit test-acceptance test-browser test-browser-unit clean
