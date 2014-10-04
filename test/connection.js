@@ -4,7 +4,7 @@ var support = require('./support');
 var client = support.client;
 
 describe('socket.io-stream', function() {
-  this.timeout(7000);
+  this.timeout(70000);
 
   it('should send/receive a file', function(done) {
     var sums = [];
