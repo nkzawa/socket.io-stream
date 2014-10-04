@@ -1,0 +1,2 @@
+ui: mocha-bdd
+server: ./test/support/server.js

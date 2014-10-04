@@ -1,49 +1,38 @@
-
-// for tests on the browser.
-if ('undefined' != typeof require) {
-  var chai = require('chai');
-  var io = require('socket.io-client');
-  var ss = require('../');
-  var support = require('./support');
-}
-
-var expect = chai.expect;
-var client = support.client;
-
+var expect = require('expect.js');
+var io = require('socket.io-client');
+var ss = require('../');
+var client = require('./support').client;
 
 describe('socket.io-stream', function() {
-  describe('lookup', function() {
-    it('should always return a same instance for a socket', function() {
-      var socket = client();
-      expect(ss(socket)).to.equal(ss(socket));
-    });
+
+  it('should always return a same instance for a socket', function() {
+    var socket = client({ autoConnect: false });
+    expect(ss(socket)).to.be(ss(socket));
   });
 
-  describe('errors', function() {
-    it('should throw an error when resending streams', function() {
-      var socket = ss(client());
-      var stream = ss.createStream();
+  it('should throw an error when resending a stream', function() {
+    var socket = ss(client({ autoConnect: false }));
+    var stream = ss.createStream();
 
+    socket.emit('foo', stream);
+    expect(function() {
+      socket.emit('bar', stream);
+    }).to.throwError();
+  });
+
+  it('should throw an error when sending destroyed streams', function() {
+    var socket = ss(client({ autoConnect: false }));
+    var stream = ss.createStream();
+
+    stream.destroy();
+    expect(function() {
       socket.emit('foo', stream);
-      expect(function() {
-        socket.emit('bar', stream);
-      }).to.throw(Error);
-    });
-
-    it('should throw an error when sending destroyed streams', function() {
-      var socket = ss(client());
-      var stream = ss.createStream();
-
-      stream.destroy();
-      expect(function() {
-        socket.emit('foo', stream);
-      }).to.throw(Error);
-    });
+    }).to.throwError();
   });
 
   describe('clean up', function() {
     beforeEach(function() {
-      this.socket = ss(client());
+      this.socket = ss(client({ autoConnect: false }));
       this.streams = function() {
         return Object.keys(this.socket.streams);
       };
@@ -53,18 +42,18 @@ describe('socket.io-stream', function() {
       beforeEach(function() {
         this.stream = ss.createStream();
         this.socket.emit('foo', this.stream);
-        expect(this.streams().length).to.eql(1);
+        expect(this.streams()).to.have.length(1);
       });
 
       it('should be cleaned up on error', function() {
         this.stream.emit('error', new Error());
-        expect(this.streams().length).to.eql(0);
+        expect(this.streams()).to.have.length(0);
       });
 
       it('should be cleaned up on finish', function(done) {
         var self = this;
         this.stream.on('end', function() {
-          expect(self.streams().length).to.eql(0);
+          expect(self.streams()).to.have.length(0);
           done();
         });
         this.stream.emit('finish');
@@ -72,7 +61,7 @@ describe('socket.io-stream', function() {
 
       it('should be cleaned up on end', function() {
         this.stream.emit('end');
-        expect(this.streams().length).to.eql(0);
+        expect(this.streams()).to.have.length(0);
       });
     });
 
@@ -80,7 +69,7 @@ describe('socket.io-stream', function() {
       beforeEach(function(done) {
         var self = this;
         this.socket.on('foo', function(stream) {
-          expect(self.streams().length).to.eql(1);
+          expect(self.streams()).to.have.length(1);
           self.stream = stream;
           done();
         });
@@ -90,13 +79,13 @@ describe('socket.io-stream', function() {
 
       it('should be cleaned up on error', function() {
         this.stream.emit('error', new Error());
-        expect(this.streams().length).to.eql(0);
+        expect(this.streams()).to.have.length(0);
       });
 
       it('should be cleaned up on finish', function(done) {
         var self = this;
         this.stream.on('end', function() {
-          expect(self.streams().length).to.eql(0);
+          expect(self.streams()).to.have.length(0);
           done();
         });
         this.stream.emit('finish');
@@ -104,7 +93,7 @@ describe('socket.io-stream', function() {
 
       it('should be cleaned up on end', function() {
         this.stream.emit('end');
-        expect(this.streams().length).to.eql(0);
+        expect(this.streams()).to.have.length(0);
       });
     });
 
@@ -112,25 +101,25 @@ describe('socket.io-stream', function() {
       it('should clean up local streams only after both "finish" and "end" were called', function() {
         var stream = ss.createStream({allowHalfOpen: true});
         this.socket.emit('foo', stream);
-        expect(this.streams().length).to.eql(1);
+        expect(this.streams()).to.have.length(1);
 
         stream.emit('end');
-        expect(this.streams().length).to.eql(1);
+        expect(this.streams()).to.have.length(1);
 
         stream.emit('finish');
-        expect(this.streams().length).to.eql(0);
+        expect(this.streams()).to.have.length(0);
       });
 
       it('should clean up remote streams only after both "finish" and "end" were called', function(done) {
         var self = this;
         this.socket.on('foo', {allowHalfOpen: true}, function(stream) {
-          expect(self.streams().length).to.eql(1);
+          expect(self.streams()).to.have.length(1);
 
           stream.emit('end');
-          expect(self.streams().length).to.eql(1);
+          expect(self.streams()).to.have.length(1);
 
           stream.emit('finish');
-          expect(self.streams().length).to.eql(0);
+          expect(self.streams()).to.have.length(0);
           done();
         });
         // emit a new stream event manually.
@@ -141,10 +130,10 @@ describe('socket.io-stream', function() {
 
   describe('when socket.io has an error', function() {
     it('should propagate the error', function(done) {
-      var sio = client();
+      var sio = client({ autoConnect: false });
       var socket = ss(sio);
       socket.on('error', function(err) {
-        expect(err).to.be.an.instanceof(Error);
+        expect(err).to.be.an(Error);
         done();
       });
       (sio.$emit || sio.emit).call(sio, 'error', new Error());
@@ -153,7 +142,7 @@ describe('socket.io-stream', function() {
 
   describe('when socket.io is disconnected', function() {
     beforeEach(function() {
-      var sio = client();
+      var sio = client({ autoConnect: false });
       var socket = ss(sio);
       this.stream = ss.createStream();
       socket.emit('foo', this.stream);
@@ -166,7 +155,7 @@ describe('socket.io-stream', function() {
 
     it('should destroy streams', function() {
       this.disconnect();
-      expect(this.stream.destroyed).to.be.true;
+      expect(this.stream.destroyed).to.be.ok();
     });
 
     it('should trigger close event', function(done) {
@@ -176,7 +165,7 @@ describe('socket.io-stream', function() {
 
     it('should trigger error event', function(done) {
       this.stream.on('error', function(err) {
-        expect(err).to.be.an.instanceof(Error);
+        expect(err).to.be.an(Error);
         done();
       });
       this.disconnect();

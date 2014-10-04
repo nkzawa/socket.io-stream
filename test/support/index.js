@@ -1,49 +1,58 @@
-if ('undefined' != typeof require) {
-  var io = require('socket.io-client');
-  var ss = require('../../');
-}
+var io = require('socket.io-client');
+var ss = require('../../');
 
-;(function(exports) {
+exports.port = process.env.ZUUL_PORT || 4000;
+
+var isBrowser = !!global.window;
+var defaultURI = isBrowser ? '' : 'http://localhost:' + exports.port;
 
 if (io.version) {
   ss.forceBase64 = true;
 
+  var optionMap = {
+    autoConnect: 'auto connect',
+    forceNew: 'force new connection',
+    reconnection: 'reconnect'
+  };
+
   // 0.9.x
-  exports.client = function(path, options) {
-    path = path || '';
+  exports.client = function(uri, options) {
+    if ('object' === typeof uri) {
+      options = uri;
+      uri = null;
+    }
+    uri = uri || defaultURI;
     options = options || {};
 
     var _options = {
-      'force new connection': true,
-      'auto connect': false,
-      'reconnect': false
+      'force new connection': true
     };
 
     for (var key in options) {
-      _options[key] = options[key];
+      _options[optionMap[key] || key] = options[key];
     }
 
-    return io.connect(path, _options);
+    return io.connect(uri, _options);
   };
 
 } else {
   // 1.x.x
 
-  exports.client = function(path, options) {
-    path = path || '';
+  exports.client = function(uri, options) {
+    if ('object' === typeof uri) {
+      options = uri;
+      uri = null;
+    }
+    uri = uri || defaultURI;
     options = options || {};
 
     var _options = {
-      forceNew: true,
-      autoConnect: false,
-      reconnection: false
+      forceNew: true
     };
     for (var key in options) {
       _options[key] = options[key];
     }
 
-    return io(path, _options);
+    return io(uri, _options);
   };
 }
-
-})('undefined' == typeof exports ? this.support = {} : exports);

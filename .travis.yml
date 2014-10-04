@@ -6,5 +6,20 @@ node_js:
   - 0.10
   - 0.11
 env:
+  - SOCKETIO_VERSION=
   - SOCKETIO_VERSION=0.9
-  - SOCKETIO_VERSION=1
+  global:
+    - secure: BOJOcmv3/8m1e2W7c4MStir5VraXxCeXlslW1xg926FUFry4kayWJhG9FD9GzWopVpeERAHPvr63pou7ylp7m2lkt1zUnacicKdTtXrdSlq2518LasnGJSxfFB59JOTdmdHn/gBAZKrhLTtsYw+mU6AanctXE/NyCVsSZXAig1Y=
+    - secure: JoPDfwbrYEKY96XjVc59SSZ/cJ7ll2Vj2vmXqVk0yIwQiJdoXEHg3vwgZRPyCztwXlkjyQsLSLuJN1LSA/b04V8UdreAIILIbSazpQFDjH2ize18v6EVtyvP1PbQoicOsbLON8GdZGfP4kCJ4VNdr8JWLlpHS2Ef/Y0eCIQOxN0=
+matrix:
+  include:
+  - node_js: 0.10
+    env: BROWSER_NAME=chrome BROWSER_VERSION=latest
+  - node_js: 0.10
+    env: BROWSER_NAME=safari BROWSER_VERSION=latest
+  - node_js: 0.10
+    env: BROWSER_NAME=ie BROWSER_VERSION=latest
+  - node_js: 0.10
+    env: BROWSER_NAME=iphone BROWSER_VERSION=7.1
+  - node_js: 0.10
+    env: BROWSER_NAME=android BROWSER_VERSION=4.4
