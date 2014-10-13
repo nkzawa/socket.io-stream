@@ -32,11 +32,11 @@
     "debug": "~2.0.0"
   },
   "devDependencies": {
-    "browserify": "~6.0.2",
+    "browserify": "~6.1.0",
     "expect.js": "~0.3.1",
-    "mocha": "~1.21.4",
+    "mocha": "~1.21.5",
     "socket.io": "~1.1.0",
     "socket.io-client": "~1.1.0",
-    "zuul": "~1.11.0"
+    "zuul": "~1.11.2"
   }
 }
