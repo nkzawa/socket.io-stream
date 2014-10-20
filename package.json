@@ -29,6 +29,7 @@
     "test": "make test"
   },
   "dependencies": {
+    "component-bind": "~1.0.0",
     "debug": "~2.0.0"
   },
   "devDependencies": {
