@@ -7,6 +7,7 @@ module.exports = require('./lib');
 (function (Buffer){
 var util = require('util');
 var Readable = require('stream').Readable;
+var bind = require('component-bind');
 
 
 module.exports = BlobReadStream;
@@ -31,8 +32,8 @@ function BlobReadStream(blob, options) {
   this.start = 0;
 
   var fileReader = this.fileReader = new FileReader();
-  fileReader.onload = this._onload.bind(this);
-  fileReader.onerror = this._onerror.bind(this);
+  fileReader.onload = bind(this, '_onload');
+  fileReader.onerror = bind(this, '_onerror');
 }
 
 BlobReadStream.prototype._read = function(size) {
@@ -59,7 +60,7 @@ BlobReadStream.prototype._onerror = function(e) {
 
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":7,"stream":26,"util":29}],3:[function(require,module,exports){
+},{"buffer":7,"component-bind":30,"stream":26,"util":29}],3:[function(require,module,exports){
 var Socket = require('./socket');
 var IOStream = require('./iostream');
 var BlobReadStream = require('./blob-read-stream');
@@ -127,6 +128,7 @@ exports.createBlobReadStream = function(blob, options) {
 },{"./blob-read-stream":2,"./iostream":4,"./socket":5}],4:[function(require,module,exports){
 var util = require('util');
 var Duplex = require('stream').Duplex;
+var bind = require('component-bind');
 var debug = require('debug')('socket.io-stream:iostream');
 
 
@@ -290,7 +292,7 @@ IOStream.prototype._onwrite = function(chunk, encoding, callback) {
 IOStream.prototype._end = function() {
   if (this.pushBuffer.length) {
     // end after flushing buffer.
-    this.pushBuffer.push(this._done.bind(this));
+    this.pushBuffer.push(bind(this, '_done'));
   } else {
     this._done();
   }
@@ -388,12 +390,13 @@ IOStream.prototype._onerror = function(err) {
   this.destroy();
 };
 
-},{"debug":30,"stream":26,"util":29}],5:[function(require,module,exports){
+},{"component-bind":30,"debug":31,"stream":26,"util":29}],5:[function(require,module,exports){
 (function (global,Buffer){
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var IOStream = require('./iostream');
 var uuid = require('./uuid');
+var bind = require('component-bind');
 var debug = require('debug')('socket.io-stream:socket');
 var emit = EventEmitter.prototype.emit;
 var on = EventEmitter.prototype.on;
@@ -437,13 +440,13 @@ function Socket(sio, options) {
   this.streams = {};
 
   var eventName = exports.event;
-  sio.on(eventName, emit.bind(this));
-  sio.on(eventName + '-read', this._onread.bind(this));
-  sio.on(eventName + '-write', this._onwrite.bind(this));
-  sio.on(eventName + '-end', this._onend.bind(this));
-  sio.on(eventName + '-error', this._onerror.bind(this));
-  sio.on('error', emit.bind(this, 'error'));
-  sio.on('disconnect', this._ondisconnect.bind(this));
+  sio.on(eventName, bind(this, emit));
+  sio.on(eventName + '-read', bind(this, '_onread'));
+  sio.on(eventName + '-write', bind(this, '_onwrite'));
+  sio.on(eventName + '-end', bind(this, '_onend'));
+  sio.on(eventName + '-error', bind(this, '_onerror'));
+  sio.on('error', bind(this, emit, 'error'));
+  sio.on('disconnect', bind(this, '_ondisconnect'));
 }
 
 /**
@@ -667,7 +670,7 @@ Socket.prototype.cleanup = function(id) {
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./iostream":4,"./uuid":6,"buffer":7,"debug":30,"events":11,"util":29}],6:[function(require,module,exports){
+},{"./iostream":4,"./uuid":6,"buffer":7,"component-bind":30,"debug":31,"events":11,"util":29}],6:[function(require,module,exports){
 // UUID function from https://gist.github.com/jed/982883
 // More lightweight than node-uuid
 function b(
@@ -4256,6 +4259,7 @@ function objectToString(o) {
 module.exports = require("./lib/_stream_passthrough.js")
 
 },{"./lib/_stream_passthrough.js":17}],23:[function(require,module,exports){
+require('stream'); // hack to fix a circular dependency issue when used with browserify
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Readable = exports;
 exports.Writable = require('./lib/_stream_writable.js');
@@ -4263,7 +4267,7 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":16,"./lib/_stream_passthrough.js":17,"./lib/_stream_readable.js":18,"./lib/_stream_transform.js":19,"./lib/_stream_writable.js":20}],24:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":16,"./lib/_stream_passthrough.js":17,"./lib/_stream_readable.js":18,"./lib/_stream_transform.js":19,"./lib/_stream_writable.js":20,"stream":26}],24:[function(require,module,exports){
 module.exports = require("./lib/_stream_transform.js")
 
 },{"./lib/_stream_transform.js":19}],25:[function(require,module,exports){
@@ -5219,6 +5223,31 @@ function hasOwnProperty(obj, prop) {
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./support/isBuffer":28,"_process":14,"inherits":12}],30:[function(require,module,exports){
+/**
+ * Slice reference.
+ */
+
+var slice = [].slice;
+
+/**
+ * Bind `obj` to `fn`.
+ *
+ * @param {Object} obj
+ * @param {Function|String} fn or string
+ * @return {Function}
+ * @api public
+ */
+
+module.exports = function(obj, fn){
+  if ('string' == typeof fn) fn = obj[fn];
+  if ('function' != typeof fn) throw new Error('bind() requires a function');
+  var args = slice.call(arguments, 2);
+  return function(){
+    return fn.apply(obj, args.concat(slice.call(arguments)));
+  }
+};
+
+},{}],31:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -5367,7 +5396,7 @@ function load() {
 
 exports.enable(load());
 
-},{"./debug":31}],31:[function(require,module,exports){
+},{"./debug":32}],32:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -5566,7 +5595,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":32}],32:[function(require,module,exports){
+},{"ms":33}],33:[function(require,module,exports){
 /**
  * Helpers.
  */
