@@ -105,6 +105,14 @@ blobStream.on('data', function(chunk) {
 blobStream.pipe(stream);
 ```
 
+### Supporting Socket.IO 0.9
+You have set `forceBase64` option `true` when using on socket.io v0.9.x.
+
+```js
+ss.forceBase64 = true;
+```
+
+
 ## Documentation
 
 ### ss(sio)
