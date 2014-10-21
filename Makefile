@@ -22,4 +22,7 @@ else
 		-- test/*.js
 endif
 
+test-local:
+	@./node_modules/.bin/zuul --local 8888 -- test/*.js
+
 .PHONY: build install test

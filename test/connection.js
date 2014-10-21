@@ -1,4 +1,5 @@
 var expect = require('expect.js');
+var Blob = require('blob');
 var ss = require('../');
 var support = require('./support');
 var client = support.client;
@@ -121,5 +122,29 @@ describe('socket.io-stream', function() {
       });
     });
   });
+
+  if (Blob) {
+    describe('BlobReadStream', function() {
+      it('should read blob', function(done) {
+        var socket = client();
+        socket.on('connect', function() {
+          var stream = ss.createStream();
+          ss(socket)
+            .emit('echo', stream)
+            .on('echo', function(stream) {
+              var data = '';
+              stream.on('data', function(chunk) {
+                data += chunk;
+              }).on('end', function() {
+                expect(data).to.equal('foobar');
+                socket.disconnect();
+                done();
+              });
+            });
+          ss.createBlobReadStream(new Blob(['foo', 'bar'])).pipe(stream);
+        });
+      });
+    });
+  }
 });
 
