@@ -19,10 +19,10 @@ else
 	@./node_modules/.bin/zuul \
 		--browser-name $(BROWSER_NAME) \
 		--browser-version $(BROWSER_VERSION) \
-		-- test/*.js
+		-- test/index.js
 endif
 
 test-local:
-	@./node_modules/.bin/zuul --local 8888 -- test/*.js
+	@./node_modules/.bin/zuul --local 8888 --disable-tunnel -- test/index.js
 
 .PHONY: build install test
