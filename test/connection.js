@@ -33,7 +33,7 @@ describe('socket.io-stream', function() {
     });
   });
 
-  it('should send/receive data', function(done) {
+  it('should send/receive data in flowing mode', function(done) {
     var socket = client();
     socket.on('connect', function() {
       var stream = ss.createStream();
@@ -45,6 +45,34 @@ describe('socket.io-stream', function() {
           var data = '';
           stream.on('data', function(chunk) {
             data += chunk;
+          }).on('end', function() {
+            expect(data).to.equal('foobar');
+            socket.disconnect();
+            done();
+          });
+        });
+
+      stream.write('foo');
+      stream.write('bar');
+      stream.end();
+    });
+  });
+
+  it('should send/receive data in paused mode', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      var stream = ss.createStream();
+      ss(socket)
+        .emit('echo', stream, { hi: 1 })
+        .on('echo', function(stream, obj) {
+          expect(obj).to.eql({ hi: 1 });
+
+          var data = '';
+          stream.on('readable', function() {
+            var chunk;
+            while (null !== (chunk = stream.read())) {
+              data += chunk;
+            }
           }).on('end', function() {
             expect(data).to.equal('foobar');
             socket.disconnect();
