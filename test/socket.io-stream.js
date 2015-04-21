@@ -5,6 +5,12 @@ var client = require('./support').client;
 
 describe('socket.io-stream', function() {
 
+  it('should expose values', function() {
+    expect(ss.Buffer).to.be(Buffer);
+    expect(ss.Socket).to.be.a('function');
+    expect(ss.forceBase64).to.be.a('boolean');
+  });
+
   it('should always return a same instance for a socket', function() {
     var socket = client({ autoConnect: false });
     expect(ss(socket)).to.be(ss(socket));
