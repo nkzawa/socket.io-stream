@@ -1,20 +1,24 @@
 # Socket.IO stream
+
 [![Build Status](https://travis-ci.org/nkzawa/socket.io-stream.png?branch=master)](https://travis-ci.org/nkzawa/socket.io-stream)
 [![NPM version](https://badge.fury.io/js/socket.io-stream.png)](http://badge.fury.io/js/socket.io-stream)
 
-This is the module for bidirectional binary data transfer with Stream 2 API through [Socket.IO](https://github.com/LearnBoost/socket.io).
+This is the module for bidirectional binary data transfer with Stream API through [Socket.IO](https://github.com/LearnBoost/socket.io).
 
 ## Installation
-    $ npm install socket.io-stream
+
+    npm install socket.io-stream
 
 ## Usage
-If you are not familiar with Stream API, be sure to check out [the docs](http://nodejs.org/api/stream.html).
-I also recommend checking out the awesome [Stream Handbook](https://github.com/substack/stream-handbook):
 
-For streaming between servers and clients, you must send stream instances first.
+If you are not familiar with Stream API, be sure to check out [the docs](http://nodejs.org/api/stream.html).
+I also recommend checking out the awesome [Stream Handbook](https://github.com/substack/stream-handbook).
+
+For streaming between server and client, you will send stream instances first.
 To receive streams, you just wrap `socket` with `socket.io-stream`, then listen any events as usual.
 
 Server:
+
 ```js
 var io = require('socket.io').listen(80);
 var ss = require('socket.io-stream');
@@ -28,9 +32,10 @@ io.of('/user').on('connection', function(socket) {
 });
 ```
 
-`createStream()` will return a new stream which can be sent by `emit`.
+`createStream()` returns a new stream which can be sent by `emit()`.
 
 Client:
+
 ```js
 var io = require('socket.io-client');
 var ss = require('socket.io-stream');
@@ -57,11 +62,12 @@ stream.pipe(fs.createWriteStream('file.txt'));
 ```
 
 ### Browser
+
 This module can be used on the browser. To do so, just copy a file to a public directory.
 
     $ cp node_modules/socket.io-stream/socket.io-stream.js somewhere/public/
 
-You can also use [browserify](http://github.com/substack/node-browserify) to build manually.
+You can also use [browserify](http://github.com/substack/node-browserify) to create your own bundle.
 
     $ npm install browserify -g
     $ cd node_modules/socket.io-stream
@@ -90,6 +96,7 @@ $(function() {
 ```
 
 #### Upload progress
+
 You can track upload progress like the following:
 
 ```js
@@ -105,8 +112,9 @@ blobStream.on('data', function(chunk) {
 blobStream.pipe(stream);
 ```
 
-### Supporting Socket.IO 0.9
-You have set `forceBase64` option `true` when using on socket.io v0.9.x.
+### Socket.IO v0.9 support
+
+You have to set `forceBase64` option `true` when using the library with socket.io v0.9.x.
 
 ```js
 ss.forceBase64 = true;
@@ -116,12 +124,14 @@ ss.forceBase64 = true;
 ## Documentation
 
 ### ss(sio)
+
 - sio `socket.io Socket` A socket of Socket.IO, both for client and server
 - return `Socket`
 
 Look up an existing `Socket` instance based on `sio` (a socket of Socket.IO), or create one if it doesn't exist.
 
 ### socket.emit(event, [arg1], [arg2], [...])
+
 - event `String` The event name
 
 Emit an `event` with variable args including at least a stream.
@@ -133,6 +143,7 @@ ss(socket).emit('multiple-streams', stream1, stream2);
 ```
 
 ### socket.on(event, [options], listener)
+
 - event `String` The event name
 - options `Object` options for received Streams
     - highWaterMark `Number`
@@ -150,6 +161,7 @@ ss(socket).on('any', {highWaterMark: 64 * 1024}, function(stream) { ... });
 ```
 
 ### ss.createStream([options])
+
 - options `Object`
     - highWaterMark `Number`
     - encoding `String`
@@ -164,6 +176,7 @@ var stream = ss.createStream();
 ```
 
 ### ss.createBlobReadStream(blob, [options])
+
 - options `Object`
     - highWaterMark `Number`
     - encoding `String`
@@ -174,6 +187,15 @@ Create a new readable stream for [Blob](https://developer.mozilla.org/en-US/docs
 
 ```js
 var stream = ss.createBlobReadStream(new Blob([1, 2, 3]));
+```
+
+### ss.Buffer
+
+Node Buffer class to use on browser, which is exposed for convenience.  On Node environment, uou should just use normal `Buffer`.
+
+```js
+var stream = ss.createStream();
+stream.write(new ss.Buffer([0, 1, 2]));
 ```
 
 ## License
