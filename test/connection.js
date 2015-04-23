@@ -86,6 +86,29 @@ describe('socket.io-stream', function() {
     });
   });
 
+  it('should send/receive Buffer', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      var stream = ss.createStream();
+      ss(socket)
+        .emit('echo', stream)
+        .on('echo', function(stream) {
+          var buffers = [];
+          stream.on('data', function(chunk) {
+            buffers.push(chunk);
+          }).on('end', function() {
+            expect(Buffer.concat(buffers).equals(new Buffer([0, 1, 2, 3]))).to.be.ok();
+            socket.disconnect();
+            done();
+          });
+        });
+
+      stream.write(new Buffer([0, 1]));
+      stream.write(new Buffer([2, 3]));
+      stream.end();
+    });
+  });
+
   it('should send/receive data through a same stream', function(done) {
     var socket = client();
     socket.on('connect', function() {
