@@ -97,7 +97,11 @@ describe('socket.io-stream', function() {
           stream.on('data', function(chunk) {
             buffers.push(chunk);
           }).on('end', function() {
-            expect(Buffer.concat(buffers).equals(new Buffer([0, 1, 2, 3]))).to.be.ok();
+            var buffer = Buffer.concat(buffers);
+            expect(buffer.length).to.be(4);
+            for (var i = 0; i < 4; i++) {
+              expect(buffer[i]).to.be(i);
+            }
             socket.disconnect();
             done();
           });
