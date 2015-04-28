@@ -60,7 +60,8 @@ BlobReadStream.prototype._onerror = function(e) {
 
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":8,"component-bind":31,"stream":27,"util":30}],3:[function(require,module,exports){
+},{"buffer":9,"component-bind":32,"stream":28,"util":31}],3:[function(require,module,exports){
+(function (Buffer){
 var Socket = require('./socket');
 var IOStream = require('./iostream');
 var BlobReadStream = require('./blob-read-stream');
@@ -69,11 +70,25 @@ var BlobReadStream = require('./blob-read-stream');
 exports = module.exports = lookup;
 
 /**
+ * Expose Node Buffer for browser.
+ *
+ * @api public
+ */
+exports.Buffer = Buffer;
+
+/**
  * Expose Socket constructor.
  *
  * @api public
  */
 exports.Socket = Socket;
+
+/**
+ * Expose IOStream constructor.
+ *
+ * @api public
+ */
+exports.IOStream = IOStream;
 
 /**
  * Forces base 64 encoding when emitting. Must be set to true for Socket.IO v0.9 or lower.
@@ -125,10 +140,12 @@ exports.createBlobReadStream = function(blob, options) {
   return new BlobReadStream(blob, options);
 };
 
-},{"./blob-read-stream":2,"./iostream":4,"./socket":5}],4:[function(require,module,exports){
+}).call(this,require("buffer").Buffer)
+},{"./blob-read-stream":2,"./iostream":4,"./socket":6,"buffer":9}],4:[function(require,module,exports){
 var util = require('util');
 var Duplex = require('stream').Duplex;
 var bind = require('component-bind');
+var uuid = require('./uuid');
 var debug = require('debug')('socket.io-stream:iostream');
 
 
@@ -149,7 +166,8 @@ function IOStream(options) {
 
   IOStream.super_.call(this, options);
 
-  this.id = null;
+  this.options = options;
+  this.id = uuid();
   this.socket = null;
 
   // Buffers
@@ -390,13 +408,120 @@ IOStream.prototype._onerror = function(err) {
   this.destroy();
 };
 
-},{"component-bind":31,"debug":32,"stream":27,"util":30}],5:[function(require,module,exports){
-(function (global,Buffer){
+},{"./uuid":7,"component-bind":32,"debug":33,"stream":28,"util":31}],5:[function(require,module,exports){
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var IOStream = require('./iostream');
-var uuid = require('./uuid');
+var slice = Array.prototype.slice;
+
+exports.Encoder = Encoder;
+exports.Decoder = Decoder;
+
+util.inherits(Encoder, EventEmitter);
+
+function Encoder() {
+  EventEmitter.call(this);
+}
+
+/**
+ * Encode streams to placeholder objects.
+ *
+ * @api public
+ */
+Encoder.prototype.encode = function(v) {
+  if (v instanceof IOStream) {
+    return this.encodeStream(v);
+  } else if (util.isArray(v)) {
+    return this.encodeArray(v);
+  } else if (v && 'object' == typeof v) {
+    return this.encodeObject(v);
+  }
+  return v;
+}
+
+Encoder.prototype.encodeStream = function(stream) {
+  this.emit('stream', stream);
+
+  // represent a stream in an object.
+  var v = { '$stream': stream.id };
+  if (stream.options) {
+    v.options = stream.options;
+  }
+  return v;
+}
+
+Encoder.prototype.encodeArray = function(arr) {
+  var v = [];
+  for (var i = 0, len = arr.length; i < len; i++) {
+    v.push(this.encode(arr[i]));
+  }
+  return v;
+}
+
+Encoder.prototype.encodeObject = function(obj) {
+  var v = {};
+  for (var k in obj) {
+    if (obj.hasOwnProperty(k)) {
+      v[k] = this.encode(obj[k]);
+    }
+  }
+  return v;
+}
+
+util.inherits(Decoder, EventEmitter);
+
+function Decoder() {
+  EventEmitter.call(this);
+}
+
+/**
+ * Decode placeholder objects to streams.
+ *
+ * @api public
+ */
+Decoder.prototype.decode = function(v) {
+  if (v && v['$stream']) {
+    return this.decodeStream(v);
+  } else if (util.isArray(v)) {
+    return this.decodeArray(v);
+  } else if (v && 'object' == typeof v) {
+    return this.decodeObject(v);
+  }
+  return v;
+}
+
+Decoder.prototype.decodeStream = function(obj) {
+  var stream = new IOStream(obj.options);
+  stream.id = obj['$stream'];
+  this.emit('stream', stream);
+  return stream;
+}
+
+Decoder.prototype.decodeArray = function(arr) {
+  var v = [];
+  for (var i = 0, len = arr.length; i < len; i++) {
+    v.push(this.decode(arr[i]));
+  }
+  return v;
+}
+
+Decoder.prototype.decodeObject = function(obj) {
+  var v = {};
+  for (var k in obj) {
+    if (obj.hasOwnProperty(k)) {
+      v[k] = this.decode(obj[k]);
+    }
+  }
+  return v;
+}
+
+},{"./iostream":4,"events":13,"util":31}],6:[function(require,module,exports){
+(function (global,Buffer){
+var util = require('util');
+var EventEmitter = require('events').EventEmitter;
 var bind = require('component-bind');
+var IOStream = require('./iostream');
+var parser = require('./parser');
 var debug = require('debug')('socket.io-stream:socket');
 var emit = EventEmitter.prototype.emit;
 var on = EventEmitter.prototype.on;
@@ -438,6 +563,8 @@ function Socket(sio, options) {
   this.sio = sio;
   this.forceBase64 = !!options.forceBase64;
   this.streams = {};
+  this.encoder = new parser.Encoder();
+  this.decoder = new parser.Decoder();
 
   var eventName = exports.event;
   sio.on(eventName, bind(this, emit));
@@ -447,6 +574,9 @@ function Socket(sio, options) {
   sio.on(eventName + '-error', bind(this, '_onerror'));
   sio.on('error', bind(this, emit, 'error'));
   sio.on('disconnect', bind(this, '_ondisconnect'));
+
+  this.encoder.on('stream', bind(this, '_onencode'));
+  this.decoder.on('stream', bind(this, '_ondecode'));
 }
 
 /**
@@ -470,16 +600,12 @@ Socket.prototype.emit = function(type) {
   return this;
 };
 
-Socket.prototype.on = function(type, options, listener) {
+Socket.prototype.on = function(type, listener) {
   if (~exports.events.indexOf(type)) {
     return on.apply(this, arguments);
   }
 
-  if ('function' == typeof options) {
-    listener = options;
-    options = null;
-  }
-  this._onstream(type, options, listener);
+  this._onstream(type, listener);
   return this;
 };
 
@@ -492,33 +618,11 @@ Socket.prototype.on = function(type, options, listener) {
 Socket.prototype._stream = function(type) {
   debug('sending new streams');
 
-  var args = slice.call(arguments, 1)
-    , pos = []
-    , sio = this.sio;
+  var args = slice.call(arguments, 1);
+  var sio = this.sio;
 
-  args = args.map(function(stream, i) {
-    if (!(stream instanceof IOStream)) {
-      return stream;
-    }
-
-    if (stream.socket || stream.destroyed) {
-      throw new Error('stream has already been sent.');
-    }
-
-    // keep stream positions of args.
-    pos.push(i);
-
-    // Generate
-    var id = uuid();
-    this.streams[id] = stream;
-    stream.id = id;
-    stream.socket = this;
-
-    // represent a stream in an id.
-    return id;
-  }, this);
-
-  sio.emit.apply(sio, [exports.event, type, pos].concat(args));
+  args = this.encoder.encode(args);
+  sio.emit.apply(sio, [exports.event, type].concat(args));
 };
 
 /**
@@ -536,12 +640,14 @@ Socket.prototype._read = function(id, size) {
  * @api private
  */
 Socket.prototype._write = function(id, chunk, encoding, callback) {
-  if (this.forceBase64) {
-    encoding = 'base64';
-    chunk = chunk.toString(encoding);
-  } else if (Buffer.isBuffer(chunk) && !global.Buffer) {
-    // socket.io can't handle Buffer when using browserify.
-    chunk = chunk.toArrayBuffer();
+  if (Buffer.isBuffer(chunk)) {
+    if (this.forceBase64) {
+      encoding = 'base64';
+      chunk = chunk.toString(encoding);
+    } else if (!global.Buffer) {
+      // socket.io can't handle Buffer when using browserify.
+      chunk = chunk.toArrayBuffer();
+    }
   }
   this.sio.emit(exports.event + '-write', id, chunk, encoding, callback);
 };
@@ -558,38 +664,20 @@ Socket.prototype._error = function(id, err) {
  * Handles a new stream request.
  *
  * @param {String} event type
- * @param {Object} options for streams
  * @param {Function} listener
  *
  * @api private
  */
-Socket.prototype._onstream = function(type, options, listener) {
+Socket.prototype._onstream = function(type, listener) {
   if ('function' != typeof listener) {
     throw TypeError('listener must be a function');
   }
 
-  function onstream(pos) {
+  function onstream() {
     debug('new streams');
-    var args = slice.call(arguments, 1);
+    var args = slice.call(arguments);
 
-    args = args.map(function(id, i) {
-      if (!~pos.indexOf(i)) {
-        // arg is not a stream.
-        return id;
-      }
-
-      if (this.streams[id]) {
-        this._error(id, 'id already exists');
-        return;
-      }
-
-      var stream = this.streams[id] = new IOStream(options);
-      stream.id = id;
-      stream.socket = this;
-
-      return stream;
-    }, this);
-
+    args = this.decoder.decode(args);
     listener.apply(this, args);
   }
   // for removeListener
@@ -664,13 +752,38 @@ Socket.prototype._ondisconnect = function() {
   }
 };
 
+Socket.prototype._onencode = function(stream) {
+  if (stream.socket || stream.destroyed) {
+    throw new Error('stream has already been sent.');
+  }
+
+  var id = stream.id;
+  if (this.streams[id]) {
+    throw new Error('Encoded stream already exists: ' + id);
+  }
+
+  this.streams[id] = stream;
+  stream.socket = this;
+};
+
+Socket.prototype._ondecode = function(stream) {
+  var id = stream.id;
+  if (this.streams[id]) {
+    this._error(id, new Error('Decoded stream already exists: ' + id));
+    return;
+  }
+
+  this.streams[id] = stream;
+  stream.socket = this;
+};
+
 Socket.prototype.cleanup = function(id) {
   delete this.streams[id];
 };
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"./iostream":4,"./uuid":6,"buffer":8,"component-bind":31,"debug":32,"events":12,"util":30}],6:[function(require,module,exports){
+},{"./iostream":4,"./parser":5,"buffer":9,"component-bind":32,"debug":33,"events":13,"util":31}],7:[function(require,module,exports){
 // UUID function from https://gist.github.com/jed/982883
 // More lightweight than node-uuid
 function b(
@@ -697,9 +810,9 @@ function b(
 
 module.exports = b;
 
-},{}],7:[function(require,module,exports){
-
 },{}],8:[function(require,module,exports){
+
+},{}],9:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -766,68 +879,149 @@ Buffer.TYPED_ARRAY_SUPPORT = (function () {
  * By augmenting the instances, we can avoid modifying the `Uint8Array`
  * prototype.
  */
-function Buffer (subject, encoding) {
-  var self = this
-  if (!(self instanceof Buffer)) return new Buffer(subject, encoding)
+function Buffer (arg) {
+  if (!(this instanceof Buffer)) {
+    // Avoid going through an ArgumentsAdaptorTrampoline in the common case.
+    if (arguments.length > 1) return new Buffer(arg, arguments[1])
+    return new Buffer(arg)
+  }
 
-  var type = typeof subject
-  var length
+  this.length = 0
+  this.parent = undefined
 
-  if (type === 'number') {
-    length = +subject
-  } else if (type === 'string') {
-    length = Buffer.byteLength(subject, encoding)
-  } else if (type === 'object' && subject !== null) {
-    // assume object is array-like
-    if (subject.type === 'Buffer' && isArray(subject.data)) subject = subject.data
-    length = +subject.length
-  } else {
+  // Common case.
+  if (typeof arg === 'number') {
+    return fromNumber(this, arg)
+  }
+
+  // Slightly less common case.
+  if (typeof arg === 'string') {
+    return fromString(this, arg, arguments.length > 1 ? arguments[1] : 'utf8')
+  }
+
+  // Unusual.
+  return fromObject(this, arg)
+}
+
+function fromNumber (that, length) {
+  that = allocate(that, length < 0 ? 0 : checked(length) | 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+    for (var i = 0; i < length; i++) {
+      that[i] = 0
+    }
+  }
+  return that
+}
+
+function fromString (that, string, encoding) {
+  if (typeof encoding !== 'string' || encoding === '') encoding = 'utf8'
+
+  // Assumption: byteLength() return value is always < kMaxLength.
+  var length = byteLength(string, encoding) | 0
+  that = allocate(that, length)
+
+  that.write(string, encoding) | 0
+  return that
+}
+
+function fromObject (that, object) {
+  if (Buffer.isBuffer(object)) return fromBuffer(that, object)
+
+  if (isArray(object)) return fromArray(that, object)
+
+  if (object == null) {
     throw new TypeError('must start with number, buffer, array or string')
   }
 
-  if (length > kMaxLength) {
-    throw new RangeError('Attempt to allocate Buffer larger than maximum size: 0x' +
-      kMaxLength.toString(16) + ' bytes')
+  if (typeof ArrayBuffer !== 'undefined' && object.buffer instanceof ArrayBuffer) {
+    return fromTypedArray(that, object)
   }
 
-  if (length < 0) length = 0
-  else length >>>= 0 // coerce to uint32
+  if (object.length) return fromArrayLike(that, object)
 
+  return fromJsonObject(that, object)
+}
+
+function fromBuffer (that, buffer) {
+  var length = checked(buffer.length) | 0
+  that = allocate(that, length)
+  buffer.copy(that, 0, 0, length)
+  return that
+}
+
+function fromArray (that, array) {
+  var length = checked(array.length) | 0
+  that = allocate(that, length)
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+// Duplicate of fromArray() to keep fromArray() monomorphic.
+function fromTypedArray (that, array) {
+  var length = checked(array.length) | 0
+  that = allocate(that, length)
+  // Truncating the elements is probably not what people expect from typed
+  // arrays with BYTES_PER_ELEMENT > 1 but it's compatible with the behavior
+  // of the old Buffer constructor.
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayLike (that, array) {
+  var length = checked(array.length) | 0
+  that = allocate(that, length)
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+// Deserialize { type: 'Buffer', data: [1,2,3,...] } into a Buffer object.
+// Returns a zero-length buffer for inputs that don't conform to the spec.
+function fromJsonObject (that, object) {
+  var array
+  var length = 0
+
+  if (object.type === 'Buffer' && isArray(object.data)) {
+    array = object.data
+    length = checked(array.length) | 0
+  }
+  that = allocate(that, length)
+
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+function allocate (that, length) {
   if (Buffer.TYPED_ARRAY_SUPPORT) {
-    // Preferred: Return an augmented `Uint8Array` instance for best performance
-    self = Buffer._augment(new Uint8Array(length)) // eslint-disable-line consistent-this
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = Buffer._augment(new Uint8Array(length))
   } else {
-    // Fallback: Return THIS instance of Buffer (created by `new`)
-    self.length = length
-    self._isBuffer = true
+    // Fallback: Return an object instance of the Buffer class
+    that.length = length
+    that._isBuffer = true
   }
 
-  var i
-  if (Buffer.TYPED_ARRAY_SUPPORT && typeof subject.byteLength === 'number') {
-    // Speed optimization -- use set if we're copying from a typed array
-    self._set(subject)
-  } else if (isArrayish(subject)) {
-    // Treat array-ish objects as a byte array
-    if (Buffer.isBuffer(subject)) {
-      for (i = 0; i < length; i++) {
-        self[i] = subject.readUInt8(i)
-      }
-    } else {
-      for (i = 0; i < length; i++) {
-        self[i] = ((subject[i] % 256) + 256) % 256
-      }
-    }
-  } else if (type === 'string') {
-    self.write(subject, 0, encoding)
-  } else if (type === 'number' && !Buffer.TYPED_ARRAY_SUPPORT) {
-    for (i = 0; i < length; i++) {
-      self[i] = 0
-    }
+  var fromPool = length !== 0 && length <= Buffer.poolSize >>> 1
+  if (fromPool) that.parent = rootParent
+
+  return that
+}
+
+function checked (length) {
+  // Note: cannot use `length < kMaxLength` here because that fails when
+  // length is NaN (which is otherwise coerced to zero.)
+  if (length >= kMaxLength) {
+    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+                         'size: 0x' + kMaxLength.toString(16) + ' bytes')
   }
-
-  if (length > 0 && length <= Buffer.poolSize) self.parent = rootParent
-
-  return self
+  return length >>> 0
 }
 
 function SlowBuffer (subject, encoding) {
@@ -880,7 +1074,7 @@ Buffer.isEncoding = function isEncoding (encoding) {
   }
 }
 
-Buffer.concat = function concat (list, totalLength) {
+Buffer.concat = function concat (list, length) {
   if (!isArray(list)) throw new TypeError('list argument must be an Array of Buffers.')
 
   if (list.length === 0) {
@@ -890,14 +1084,14 @@ Buffer.concat = function concat (list, totalLength) {
   }
 
   var i
-  if (totalLength === undefined) {
-    totalLength = 0
+  if (length === undefined) {
+    length = 0
     for (i = 0; i < list.length; i++) {
-      totalLength += list[i].length
+      length += list[i].length
     }
   }
 
-  var buf = new Buffer(totalLength)
+  var buf = new Buffer(length)
   var pos = 0
   for (i = 0; i < list.length; i++) {
     var item = list[i]
@@ -907,36 +1101,33 @@ Buffer.concat = function concat (list, totalLength) {
   return buf
 }
 
-Buffer.byteLength = function byteLength (str, encoding) {
-  var ret
-  str = str + ''
+function byteLength (string, encoding) {
+  if (typeof string !== 'string') string = String(string)
+
+  if (string.length === 0) return 0
+
   switch (encoding || 'utf8') {
     case 'ascii':
     case 'binary':
     case 'raw':
-      ret = str.length
-      break
+      return string.length
     case 'ucs2':
     case 'ucs-2':
     case 'utf16le':
     case 'utf-16le':
-      ret = str.length * 2
-      break
+      return string.length * 2
     case 'hex':
-      ret = str.length >>> 1
-      break
+      return string.length >>> 1
     case 'utf8':
     case 'utf-8':
-      ret = utf8ToBytes(str).length
-      break
+      return utf8ToBytes(string).length
     case 'base64':
-      ret = base64ToBytes(str).length
-      break
+      return base64ToBytes(string).length
     default:
-      ret = str.length
+      return string.length
   }
-  return ret
 }
+Buffer.byteLength = byteLength
 
 // pre-set for values that may exist in the future
 Buffer.prototype.length = undefined
@@ -1089,13 +1280,11 @@ function hexWrite (buf, string, offset, length) {
 }
 
 function utf8Write (buf, string, offset, length) {
-  var charsWritten = blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
-  return charsWritten
+  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
 }
 
 function asciiWrite (buf, string, offset, length) {
-  var charsWritten = blitBuffer(asciiToBytes(string), buf, offset, length)
-  return charsWritten
+  return blitBuffer(asciiToBytes(string), buf, offset, length)
 }
 
 function binaryWrite (buf, string, offset, length) {
@@ -1103,75 +1292,83 @@ function binaryWrite (buf, string, offset, length) {
 }
 
 function base64Write (buf, string, offset, length) {
-  var charsWritten = blitBuffer(base64ToBytes(string), buf, offset, length)
-  return charsWritten
+  return blitBuffer(base64ToBytes(string), buf, offset, length)
 }
 
-function utf16leWrite (buf, string, offset, length) {
-  var charsWritten = blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
-  return charsWritten
+function ucs2Write (buf, string, offset, length) {
+  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
 }
 
 Buffer.prototype.write = function write (string, offset, length, encoding) {
-  // Support both (string, offset, length, encoding)
-  // and the legacy (string, encoding, offset, length)
-  if (isFinite(offset)) {
-    if (!isFinite(length)) {
+  // Buffer#write(string)
+  if (offset === undefined) {
+    encoding = 'utf8'
+    length = this.length
+    offset = 0
+  // Buffer#write(string, encoding)
+  } else if (length === undefined && typeof offset === 'string') {
+    encoding = offset
+    length = this.length
+    offset = 0
+  // Buffer#write(string, offset[, length][, encoding])
+  } else if (isFinite(offset)) {
+    offset = offset >>> 0
+    if (isFinite(length)) {
+      length = length >>> 0
+      if (encoding === undefined) encoding = 'utf8'
+    } else {
       encoding = length
       length = undefined
     }
-  } else {  // legacy
+  // legacy write(string, encoding, offset, length) - remove in v0.13
+  } else {
     var swap = encoding
     encoding = offset
-    offset = length
+    offset = length >>> 0
     length = swap
   }
 
-  offset = Number(offset) || 0
+  var remaining = this.length - offset
+  if (length === undefined || length > remaining) length = remaining
 
-  if (length < 0 || offset < 0 || offset > this.length) {
+  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
     throw new RangeError('attempt to write outside buffer bounds')
   }
 
-  var remaining = this.length - offset
-  if (!length) {
-    length = remaining
-  } else {
-    length = Number(length)
-    if (length > remaining) {
-      length = remaining
+  if (!encoding) encoding = 'utf8'
+
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'hex':
+        return hexWrite(this, string, offset, length)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Write(this, string, offset, length)
+
+      case 'ascii':
+        return asciiWrite(this, string, offset, length)
+
+      case 'binary':
+        return binaryWrite(this, string, offset, length)
+
+      case 'base64':
+        // Warning: maxLength not taken into account in base64Write
+        return base64Write(this, string, offset, length)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return ucs2Write(this, string, offset, length)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
     }
   }
-  encoding = String(encoding || 'utf8').toLowerCase()
-
-  var ret
-  switch (encoding) {
-    case 'hex':
-      ret = hexWrite(this, string, offset, length)
-      break
-    case 'utf8':
-    case 'utf-8':
-      ret = utf8Write(this, string, offset, length)
-      break
-    case 'ascii':
-      ret = asciiWrite(this, string, offset, length)
-      break
-    case 'binary':
-      ret = binaryWrite(this, string, offset, length)
-      break
-    case 'base64':
-      ret = base64Write(this, string, offset, length)
-      break
-    case 'ucs2':
-    case 'ucs-2':
-    case 'utf16le':
-    case 'utf-16le':
-      ret = utf16leWrite(this, string, offset, length)
-      break
-    default:
-      throw new TypeError('Unknown encoding: ' + encoding)
-  }
-  return ret
 }
 
 Buffer.prototype.toJSON = function toJSON () {
@@ -1895,12 +2092,6 @@ function stringtrim (str) {
   return str.replace(/^\s+|\s+$/g, '')
 }
 
-function isArrayish (subject) {
-  return isArray(subject) || Buffer.isBuffer(subject) ||
-      subject && typeof subject === 'object' &&
-      typeof subject.length === 'number'
-}
-
 function toHex (n) {
   if (n < 16) return '0' + n.toString(16)
   return n.toString(16)
@@ -2032,7 +2223,7 @@ function decodeUtf8Char (str) {
   }
 }
 
-},{"base64-js":9,"ieee754":10,"is-array":11}],9:[function(require,module,exports){
+},{"base64-js":10,"ieee754":11,"is-array":12}],10:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -2158,7 +2349,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
@@ -2244,7 +2435,7 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 
 /**
  * isArray
@@ -2279,7 +2470,7 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2582,7 +2773,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -2607,12 +2798,12 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -2672,10 +2863,10 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = require("./lib/_stream_duplex.js")
 
-},{"./lib/_stream_duplex.js":17}],17:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":18}],18:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2768,7 +2959,7 @@ function forEach (xs, f) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_readable":19,"./_stream_writable":21,"_process":15,"core-util-is":22,"inherits":13}],18:[function(require,module,exports){
+},{"./_stream_readable":20,"./_stream_writable":22,"_process":16,"core-util-is":23,"inherits":14}],19:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2816,7 +3007,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"./_stream_transform":20,"core-util-is":22,"inherits":13}],19:[function(require,module,exports){
+},{"./_stream_transform":21,"core-util-is":23,"inherits":14}],20:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -3771,7 +3962,7 @@ function indexOf (xs, x) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":17,"_process":15,"buffer":8,"core-util-is":22,"events":12,"inherits":13,"isarray":14,"stream":27,"string_decoder/":28,"util":7}],20:[function(require,module,exports){
+},{"./_stream_duplex":18,"_process":16,"buffer":9,"core-util-is":23,"events":13,"inherits":14,"isarray":15,"stream":28,"string_decoder/":29,"util":8}],21:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3982,7 +4173,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-},{"./_stream_duplex":17,"core-util-is":22,"inherits":13}],21:[function(require,module,exports){
+},{"./_stream_duplex":18,"core-util-is":23,"inherits":14}],22:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -4463,7 +4654,7 @@ function endWritable(stream, state, cb) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":17,"_process":15,"buffer":8,"core-util-is":22,"inherits":13,"stream":27}],22:[function(require,module,exports){
+},{"./_stream_duplex":18,"_process":16,"buffer":9,"core-util-is":23,"inherits":14,"stream":28}],23:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -4573,10 +4764,10 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 }).call(this,require("buffer").Buffer)
-},{"buffer":8}],23:[function(require,module,exports){
+},{"buffer":9}],24:[function(require,module,exports){
 module.exports = require("./lib/_stream_passthrough.js")
 
-},{"./lib/_stream_passthrough.js":18}],24:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":19}],25:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = require('stream');
 exports.Readable = exports;
@@ -4585,13 +4776,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":17,"./lib/_stream_passthrough.js":18,"./lib/_stream_readable.js":19,"./lib/_stream_transform.js":20,"./lib/_stream_writable.js":21,"stream":27}],25:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":18,"./lib/_stream_passthrough.js":19,"./lib/_stream_readable.js":20,"./lib/_stream_transform.js":21,"./lib/_stream_writable.js":22,"stream":28}],26:[function(require,module,exports){
 module.exports = require("./lib/_stream_transform.js")
 
-},{"./lib/_stream_transform.js":20}],26:[function(require,module,exports){
+},{"./lib/_stream_transform.js":21}],27:[function(require,module,exports){
 module.exports = require("./lib/_stream_writable.js")
 
-},{"./lib/_stream_writable.js":21}],27:[function(require,module,exports){
+},{"./lib/_stream_writable.js":22}],28:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4720,7 +4911,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":12,"inherits":13,"readable-stream/duplex.js":16,"readable-stream/passthrough.js":23,"readable-stream/readable.js":24,"readable-stream/transform.js":25,"readable-stream/writable.js":26}],28:[function(require,module,exports){
+},{"events":13,"inherits":14,"readable-stream/duplex.js":17,"readable-stream/passthrough.js":24,"readable-stream/readable.js":25,"readable-stream/transform.js":26,"readable-stream/writable.js":27}],29:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4943,14 +5134,14 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":8}],29:[function(require,module,exports){
+},{"buffer":9}],30:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -5540,7 +5731,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":29,"_process":15,"inherits":13}],31:[function(require,module,exports){
+},{"./support/isBuffer":30,"_process":16,"inherits":14}],32:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -5565,7 +5756,7 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -5742,7 +5933,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-},{"./debug":33}],33:[function(require,module,exports){
+},{"./debug":34}],34:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -5941,7 +6132,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":34}],34:[function(require,module,exports){
+},{"ms":35}],35:[function(require,module,exports){
 /**
  * Helpers.
  */
