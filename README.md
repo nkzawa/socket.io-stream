@@ -134,30 +134,35 @@ Look up an existing `Socket` instance based on `sio` (a socket of Socket.IO), or
 
 - event `String` The event name
 
-Emit an `event` with variable args including at least a stream.
+Emit an `event` with variable number of arguments including at least a stream.
 
 ```js
 ss(socket).emit('myevent', stream, {name: 'thefilename'}, function() { ... });
+
 // send some streams at a time.
 ss(socket).emit('multiple-streams', stream1, stream2);
+
+// as members of array or object.
+ss(socket).emit('flexible', [stream1, { foo: stream2 }]);
 ```
 
-### socket.on(event, [options], listener)
+### socket.on(event, listener)
 
 - event `String` The event name
-- options `Object` options for received Streams
-    - highWaterMark `Number`
-    - encoding `String`
-    - decodeStrings `Boolean`
-    - objectMode `Boolean`
 - listener `Function` The event handler function
 
-Add a `listener` for `event`. `listener` will take streams with any data as arguments. `options` is an object for streams.
+Add a `listener` for `event`. `listener` will take stream(s) with any data as arguments.
 
 ```js
 ss(socket).on('myevent', function(stream, data, callback) { ... });
-// with options
-ss(socket).on('any', {highWaterMark: 64 * 1024}, function(stream) { ... });
+
+// access stream options
+ss(socket).on('foo', function(stream) {
+  if (stream.options && stream.options.highWaterMark > 1024) {
+    console.error('Too big highWaterMark.');
+    return;
+  }
+});
 ```
 
 ### ss.createStream([options])
@@ -167,12 +172,20 @@ ss(socket).on('any', {highWaterMark: 64 * 1024}, function(stream) { ... });
     - encoding `String`
     - decodeStrings `Boolean`
     - objectMode `Boolean`
+    - allowHalfOpen `Boolean` if `true`, then the stream won't automatically close when the other endpoint ends. Default to `false`.
 - return `Duplex Stream`
 
 Create a new duplex stream. See [the docs](http://nodejs.org/api/stream.html) for the details of stream and `options`.
 
 ```js
 var stream = ss.createStream();
+
+// with options
+var stream = ss.createStream({
+  highWaterMark: 1024,
+  objectMode: true,
+  allowHalfOpen: true
+});
 ```
 
 ### ss.createBlobReadStream(blob, [options])

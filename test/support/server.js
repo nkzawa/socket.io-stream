@@ -1,4 +1,5 @@
 var fs = require('fs');
+var util = require('util');
 var io = require('socket.io');
 var Checksum = require('./checksum');
 var crypto = require('crypto');
@@ -32,16 +33,15 @@ server.on('connection', function(socket) {
     }).resume();
   });
 
-  ss(socket).on('echo', function(stream) {
+  ss(socket).on('echo', function() {
     var args = Array.prototype.slice.call(arguments);
-    var _stream = args[0] = ss.createStream();
     var s = ss(socket);
-    s.emit.apply(s, ['echo'].concat(args));
-    stream.pipe(_stream);
+    s.emit.apply(s, ['echo'].concat(echo(args)));
   });
 
-  ss(socket).on('sendBack', { allowHalfOpen: true }, function(stream) {
-    stream.pipe(stream);
+  ss(socket).on('sendBack', function(stream) {
+    var args = Array.prototype.slice.call(arguments);
+    sendBack(args);
   });
 
   ss(socket).on('multi', function(stream1, stream2) {
@@ -58,3 +58,38 @@ server.on('connection', function(socket) {
     stream.emit('error', new Error(msg));
   });
 });
+
+function echo(v) {
+  if (v instanceof ss.IOStream) {
+    return v.pipe(ss.createStream(v.options));
+  }
+
+  if (util.isArray(v)) {
+    v = v.map(function(v) {
+      return echo(v);
+    });
+  } else if (v && 'object' == typeof v) {
+    for (var k in v) {
+      if (v.hasOwnProperty(k)) {
+        v[k] = echo(v[k]);
+      }
+    }
+  }
+  return v;
+}
+
+function sendBack(v) {
+  if (v instanceof ss.IOStream) {
+    return v.pipe(v);
+  }
+
+  if (util.isArray(v)) {
+    v.forEach(sendBack);
+  } else if (v && 'object' == typeof v) {
+    for (var k in v) {
+      if (v.hasOwnProperty(k)) {
+        sendBack(v[k]);
+      }
+    }
+  }
+}

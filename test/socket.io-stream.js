@@ -1,6 +1,7 @@
 var expect = require('expect.js');
 var io = require('socket.io-client');
 var ss = require('../');
+var parser = require('../lib/parser');
 var client = require('./support').client;
 
 describe('socket.io-stream', function() {
@@ -8,6 +9,7 @@ describe('socket.io-stream', function() {
   it('should expose values', function() {
     expect(ss.Buffer).to.be(Buffer);
     expect(ss.Socket).to.be.a('function');
+    expect(ss.IOStream).to.be.a('function');
     expect(ss.forceBase64).to.be.a('boolean');
   });
 
@@ -80,7 +82,8 @@ describe('socket.io-stream', function() {
           done();
         });
         // emit a new stream event manually.
-        this.socket.$emit('foo', [0], 1);
+        var encoder = new parser.Encoder();
+        this.socket.$emit('foo', encoder.encode(ss.createStream()));
       });
 
       it('should be cleaned up on error', function() {
@@ -105,7 +108,7 @@ describe('socket.io-stream', function() {
 
     describe('when allowHalfOpen is enabled', function() {
       it('should clean up local streams only after both "finish" and "end" were called', function() {
-        var stream = ss.createStream({allowHalfOpen: true});
+        var stream = ss.createStream({ allowHalfOpen: true });
         this.socket.emit('foo', stream);
         expect(this.streams()).to.have.length(1);
 
@@ -118,7 +121,7 @@ describe('socket.io-stream', function() {
 
       it('should clean up remote streams only after both "finish" and "end" were called', function(done) {
         var self = this;
-        this.socket.on('foo', {allowHalfOpen: true}, function(stream) {
+        this.socket.on('foo', function(stream) {
           expect(self.streams()).to.have.length(1);
 
           stream.emit('end');
@@ -129,7 +132,8 @@ describe('socket.io-stream', function() {
           done();
         });
         // emit a new stream event manually.
-        this.socket.$emit('foo', [0], 1);
+        var encoder = new parser.Encoder();
+        this.socket.$emit('foo', encoder.encode(ss.createStream({ allowHalfOpen: true })));
       });
     });
   });

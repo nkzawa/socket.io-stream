@@ -113,6 +113,62 @@ describe('socket.io-stream', function() {
     });
   });
 
+  it('should send/receive an object in object mode', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      var stream = ss.createStream({ objectMode: true });
+      ss(socket)
+        .emit('echo', stream)
+        .on('echo', function(stream) {
+          var data = [];
+          stream.on('data', function(chunk) {
+            data.push(chunk);
+          }).on('end', function() {
+            expect(data.length).to.be(2);;
+            expect(data[0]).to.eql({ foo: 0 });
+            expect(data[1]).to.eql({ bar: 1 });
+            socket.disconnect();
+            done();
+          });
+        });
+
+      stream.write({ foo: 0 });
+      stream.write({ bar: 1 });
+      stream.end();
+    });
+  });
+
+  it('should send/receive streams in an array', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      ss(socket)
+        .emit('echo', [ss.createStream(), ss.createStream()])
+        .on('echo', function(data) {
+          expect(data[0]).to.be.a(ss.IOStream);
+          expect(data[1]).to.be.a(ss.IOStream);
+          socket.disconnect();
+          done();
+        });
+    });
+  });
+
+  it('should send/receive streams in an object', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      ss(socket)
+        .emit('echo', {
+          foo: ss.createStream(),
+          bar: ss.createStream()
+        })
+        .on('echo', function(data) {
+          expect(data.foo).to.be.a(ss.IOStream);
+          expect(data.bar).to.be.a(ss.IOStream);
+          socket.disconnect();
+          done();
+        });
+    });
+  });
+
   it('should send/receive data through a same stream', function(done) {
     var socket = client();
     socket.on('connect', function() {
