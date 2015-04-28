@@ -6,6 +6,7 @@ node_js:
   - 0.10
   - 0.12
   - iojs
+sudo: false
 env:
   global:
     - secure: BOJOcmv3/8m1e2W7c4MStir5VraXxCeXlslW1xg926FUFry4kayWJhG9FD9GzWopVpeERAHPvr63pou7ylp7m2lkt1zUnacicKdTtXrdSlq2518LasnGJSxfFB59JOTdmdHn/gBAZKrhLTtsYw+mU6AanctXE/NyCVsSZXAig1Y=
