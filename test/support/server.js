@@ -39,13 +39,19 @@ server.on('connection', function(socket) {
     s.emit.apply(s, ['echo'].concat(echo(args)));
   });
 
-  ss(socket).on('sendBack', function(stream) {
+  ss(socket).on('sendBack', function() {
     var args = Array.prototype.slice.call(arguments);
     sendBack(args);
   });
 
   ss(socket).on('multi', function(stream1, stream2) {
     stream1.pipe(stream2);
+  });
+
+  ss(socket).on('ack', function() {
+    var args = Array.prototype.slice.call(arguments);
+    var callback = args.pop();
+    callback.apply(this, echo(args));
   });
 
   ss(socket).on('clientError', function(stream, callback) {

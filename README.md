@@ -144,6 +144,9 @@ ss(socket).emit('multiple-streams', stream1, stream2);
 
 // as members of array or object.
 ss(socket).emit('flexible', [stream1, { foo: stream2 }]);
+
+// get streams through the ack callback
+ss(socket).emit('ack', function(stream1, stream2) { ... });
 ```
 
 ### socket.on(event, listener)

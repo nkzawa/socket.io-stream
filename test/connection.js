@@ -210,6 +210,39 @@ describe('socket.io-stream', function() {
     });
   });
 
+  it('should get a stream through ack', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      var stream = ss.createStream();
+      ss(socket).emit('ack', stream, function(stream) {
+        var data = '';
+        stream.on('data', function(chunk) {
+          data += chunk;
+        }).on('end', function() {
+          expect(data).to.equal('foobar');
+          socket.disconnect();
+          done();
+        });
+      });
+
+      stream.write('foo');
+      stream.write('bar');
+      stream.end();
+    });
+  });
+
+  it('should get streams through ack as object and array', function(done) {
+    var socket = client();
+    socket.on('connect', function() {
+      ss(socket).emit('ack', [ss.createStream(), { foo: ss.createStream() }], function(data) {
+        expect(data[0]).to.be.a(ss.IOStream);
+        expect(data[1].foo).to.be.a(ss.IOStream);
+        socket.disconnect();
+        done();
+      });
+    });
+  });
+
   it('should send an error happened on the client', function(done) {
     var socket = client();
     socket.on('connect', function() {
