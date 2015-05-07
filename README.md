@@ -207,7 +207,7 @@ var stream = ss.createBlobReadStream(new Blob([1, 2, 3]));
 
 ### ss.Buffer
 
-Node Buffer class to use on browser, which is exposed for convenience.  On Node environment, uou should just use normal `Buffer`.
+[Node Buffer](https://nodejs.org/api/buffer.html) class to use on browser, which is exposed for convenience. On Node environment, you should just use normal `Buffer`.
 
 ```js
 var stream = ss.createStream();
