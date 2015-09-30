@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/nkzawa/socket.io-stream.png?branch=master)](https://travis-ci.org/nkzawa/socket.io-stream)
 [![NPM version](https://badge.fury.io/js/socket.io-stream.png)](http://badge.fury.io/js/socket.io-stream)
 
-This is the module for bidirectional binary data transfer with Stream API through [Socket.IO](https://github.com/LearnBoost/socket.io).
+This is the module for bidirectional binary data transfer with Stream API through [Socket.IO](https://github.com/socketio/socket.io).
 
 ## Installation
 
