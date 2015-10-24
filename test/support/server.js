@@ -21,14 +21,14 @@ server.on('connection', function(socket) {
   ss(socket).on('read', function(stream, path, callback) {
     var file = fs.createReadStream(__dirname + '/../../' + path);
     var checksum = new Checksum();
-    file.pipe(checksum).pipe(stream).on('end', function() {
+    file.pipe(checksum).pipe(stream).on('finish', function() {
       callback(checksum.digest());
     });
   });
 
   ss(socket).on('checksum', function(stream, callback) {
     var checksum = new Checksum();
-    stream.pipe(checksum).on('end', function() {
+    stream.pipe(checksum).on('finish', function() {
       callback(checksum.digest());
     }).resume();
   });
