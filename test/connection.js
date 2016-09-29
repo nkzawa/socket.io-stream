@@ -7,6 +7,14 @@ var client = support.client;
 describe('socket.io-stream', function() {
   this.timeout(70000);
 
+  it('should not crash when _read() is called before the socket is set', function(done) {
+    var stream = ss.createStream();
+    stream.read(0);
+
+    done();
+  });
+
+  ////
   it('should send/receive a file', function(done) {
     var sums = [];
     var socket = client();
