@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "component-bind": "~1.0.0",
-    "debug": "~2.2.0"
+    "debug": "^2.6.9"
   },
   "devDependencies": {
     "blob": "0.0.4",
