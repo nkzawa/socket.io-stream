@@ -27,20 +27,16 @@
   },
   "scripts": {
     "prepublish": "make build",
-    "test": "make test"
+    "test": "jest --detectOpenHandles"
   },
   "dependencies": {
     "component-bind": "~1.0.0",
-    "debug": "~2.2.0"
+    "debug": "~4.3.4"
   },
   "devDependencies": {
-    "blob": "0.0.4",
-    "browserify": "~13.1.0",
-    "expect.js": "~0.3.1",
-    "mocha": "~3.0.2",
-    "socket.io": "~1.4.8",
-    "socket.io-client": "~1.4.8",
-    "zuul": "~3.11.1",
-    "zuul-ngrok": "~4.0.0"
+    "browserify": "~17.0.0",
+    "jest": "^28.1.2",
+    "socket.io": "~4.5.1",
+    "socket.io-client": "~4.5.1"
   }
 }
