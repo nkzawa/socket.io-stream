@@ -1,5 +1,5 @@
 {
-  "name": "socket.io-stream",
+  "name": "@wearemothership/socket.io-stream",
   "version": "0.9.1+0.1.0",
   "description": "stream for socket.io",
   "author": "Naoyuki Kanezawa <naoyuki.kanezawa@gmail.com>",
