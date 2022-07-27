@@ -1,6 +1,6 @@
 {
   "name": "socket.io-stream",
-  "version": "0.9.1",
+  "version": "0.9.1+0.1.0",
   "description": "stream for socket.io",
   "author": "Naoyuki Kanezawa <naoyuki.kanezawa@gmail.com>",
   "contributors": [
@@ -23,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/nkzawa/socket.io-stream.git"
+    "url": "git://github.com/wearemothership.com/socket.io-stream.git"
   },
   "scripts": {
     "prepublish": "make build",
