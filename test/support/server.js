@@ -16,6 +16,8 @@ if (io.version) {
   server = io(support.port);
 }
 
+module.exports = server;
+
 server.on('connection', function(socket) {
 
   ss(socket).on('read', function(stream, path, callback) {
